@@ -26,6 +26,9 @@ $activeDensity = $layoutSettings['density'] ?? 'comfortable';
     <!-- Sidebar Backdrop Overlay for Mobile -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
+    <!-- Calendar Backdrop Overlay for Mobile -->
+    <div class="calendar-backdrop" id="calendarBackdrop" onclick="window.MailApp.calendar.close()"></div>
+
     <div class="app-container">
         <!-- Top Navigation Bar -->
         <?php require dirname(__DIR__) . '/partials/topbar.php'; ?>

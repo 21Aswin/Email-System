@@ -252,18 +252,23 @@ try {
             ");
         }
 
-        // Seed initial calendar events if empty
+        // Seed initial calendar events if empty or fewer than 5
         $calCount = (int)$pdo->query("SELECT COUNT(*) FROM calendar_events")->fetchColumn();
-        if ($calCount === 0) {
+        if ($calCount < 5) {
             $year = (int)date('Y');
             $curDate = date('Y-m-d');
             $tomorrow = date('Y-m-d', strtotime('+1 day'));
             $dayAfter = date('Y-m-d', strtotime('+2 days'));
+            $nextWeek = date('Y-m-d', strtotime('+5 days'));
 
             $sampleEvents = [
+                // Active work & interview events
                 ['title' => 'Technical Interview - Shanmuga Aswin (Full Stack Java)', 'desc' => 'Candidate discussion regarding Spring Boot, React & MySQL skills. Google Meet.', 'loc' => 'https://meet.google.com/nxw-inte-rvw', 'date' => $curDate, 'start' => '11:00:00', 'end' => '12:00:00', 'all_day' => 0, 'cat' => 'interview', 'color' => '#d97706'],
                 ['title' => 'Sprint Planning & Email Architecture Review', 'desc' => 'Sprint deliverables for Novalyx Cloud Webmail release.', 'loc' => 'Novalyx Conf Room A', 'date' => $tomorrow, 'start' => '14:30:00', 'end' => '15:30:00', 'all_day' => 0, 'cat' => 'work', 'color' => '#2563eb'],
                 ['title' => 'HR Round 2 & Resume Verification Call', 'desc' => 'Discussion on package and joining timeline.', 'loc' => 'Google Meet', 'date' => $dayAfter, 'start' => '16:00:00', 'end' => '16:45:00', 'all_day' => 0, 'cat' => 'interview', 'color' => '#d97706'],
+                ['title' => 'Client Project Demo & Feature Review', 'desc' => 'Live demonstration of webmail enhancements.', 'loc' => 'Zoom Meeting', 'date' => $nextWeek, 'start' => '15:00:00', 'end' => '16:00:00', 'all_day' => 0, 'cat' => 'meeting', 'color' => '#9333ea'],
+
+                // Indian Gazetted Holidays matching user reference photo
                 ['title' => 'Bahag Bihu (Assam)', 'desc' => 'Regional Harvest Festival', 'loc' => 'India', 'date' => "{$year}-04-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
                 ['title' => 'Vaisakhadi (Bengal)', 'desc' => 'Bengali New Year', 'loc' => 'India', 'date' => "{$year}-04-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
                 ['title' => 'Buddha Purnima', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-05-01", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
@@ -271,30 +276,47 @@ try {
                 ['title' => 'Bakrid / Eid al-Adha', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-05-28", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
                 ['title' => 'Muharram / Ashura', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-06-26", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
                 ['title' => 'Rath Yatra', 'desc' => 'Regional Festival', 'loc' => 'India', 'date' => "{$year}-07-16", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
-                ['title' => 'Independence Day', 'desc' => 'National Holiday', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
-                ['title' => 'Parsi New Year', 'desc' => 'Regional Festival', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Independence Day', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Parsi New Year', 'desc' => 'Regional Observance', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
                 ['title' => 'Milad un-Nabi', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-08-26", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Gandhi Jayanti', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-10-02", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Dussehra / Vijayadashami', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-10-20", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Diwali / Deepavali', 'desc' => 'Festival of Lights', 'loc' => 'India', 'date' => "{$year}-11-08", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Children\'s Day', 'desc' => 'National Observance', 'loc' => 'India', 'date' => "{$year}-11-14", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Guru Nanak Jayanti', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-11-24", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Christmas Day', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-12-25", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'New Year\'s Eve', 'desc' => 'Celebration', 'loc' => 'Global', 'date' => "{$year}-12-31", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'New Year\'s Day', 'desc' => 'Global Observance', 'loc' => 'Global', 'date' => ($year + 1) . "-01-01", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Pongal / Makar Sankranti', 'desc' => 'Harvest Festival', 'loc' => 'Tamil Nadu / India', 'date' => ($year + 1) . "-01-14", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Republic Day', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => ($year + 1) . "-01-26", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
             ];
+
+            // Get all user ids or at least 1
+            $uids = $pdo->query("SELECT id FROM users")->fetchAll(PDO::FETCH_COLUMN);
+            if (empty($uids)) $uids = [1];
 
             $ins = $pdo->prepare("
                 INSERT INTO calendar_events (user_id, title, description, location, event_date, start_time, end_time, is_all_day, category, color)
-                VALUES (1, :title, :desc, :loc, :dt, :start, :end, :all_day, :cat, :col)
+                VALUES (:uid, :title, :desc, :loc, :dt, :start, :end, :all_day, :cat, :col)
             ");
 
-            foreach ($sampleEvents as $ev) {
-                $ins->execute([
-                    'title' => $ev['title'],
-                    'desc' => $ev['desc'],
-                    'loc' => $ev['loc'],
-                    'dt' => $ev['date'],
-                    'start' => $ev['start'],
-                    'end' => $ev['end'],
-                    'all_day' => $ev['all_day'],
-                    'cat' => $ev['cat'],
-                    'col' => $ev['color']
-                ]);
+            foreach ($uids as $uid) {
+                foreach ($sampleEvents as $ev) {
+                    $ins->execute([
+                        'uid' => $uid,
+                        'title' => $ev['title'],
+                        'desc' => $ev['desc'],
+                        'loc' => $ev['loc'],
+                        'dt' => $ev['date'],
+                        'start' => $ev['start'],
+                        'end' => $ev['end'],
+                        'all_day' => $ev['all_day'],
+                        'cat' => $ev['cat'],
+                        'col' => $ev['color']
+                    ]);
+                }
             }
-            echo "      Seeded " . count($sampleEvents) . " initial calendar events & holidays.\n";
+            echo "      Seeded " . count($sampleEvents) . " calendar events & holidays for " . count($uids) . " user(s).\n";
         }
     } catch (\Exception $e) {
         echo "      Calendar setup note: " . $e->getMessage() . "\n";

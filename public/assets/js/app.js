@@ -1691,10 +1691,20 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 const panel = document.getElementById('calendarSidepanel');
                 const railBtn = document.getElementById('railCalendarBtn');
                 const topbarBtn = document.getElementById('topbarCalendarBtn');
+                const sidebarBtn = document.getElementById('sidebarCalendarBtn');
+                const calBackdrop = document.getElementById('calendarBackdrop');
+
+                // If mobile drawer was open, close it
+                const sidebar = document.getElementById('appSidebar');
+                const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+                if (sidebar) sidebar.classList.remove('open');
+                if (sidebarBackdrop) sidebarBackdrop.classList.remove('show');
 
                 if (panel) panel.style.display = 'flex';
+                if (calBackdrop) calBackdrop.classList.add('show');
                 if (railBtn) railBtn.classList.add('active');
                 if (topbarBtn) topbarBtn.classList.add('active');
+                if (sidebarBtn) sidebarBtn.classList.add('active');
 
                 if (!this.selectedDate) this.init();
 
@@ -1710,10 +1720,14 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 const panel = document.getElementById('calendarSidepanel');
                 const railBtn = document.getElementById('railCalendarBtn');
                 const topbarBtn = document.getElementById('topbarCalendarBtn');
+                const sidebarBtn = document.getElementById('sidebarCalendarBtn');
+                const calBackdrop = document.getElementById('calendarBackdrop');
 
                 if (panel) panel.style.display = 'none';
+                if (calBackdrop) calBackdrop.classList.remove('show');
                 if (railBtn) railBtn.classList.remove('active');
                 if (topbarBtn) topbarBtn.classList.remove('active');
+                if (sidebarBtn) sidebarBtn.classList.remove('active');
                 this.hideCreateForm();
             },
 
@@ -1747,7 +1761,8 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     if (data.success && data.events) {
                         this.eventsCache = data.events;
                         this.renderMiniCalendar();
-                        this.renderAgenda();
+                        const agendaList = (data.upcoming && data.upcoming.length) ? data.upcoming : this.eventsCache;
+                        this.renderAgenda(agendaList);
                     }
                 } catch (e) {
                     console.error("Calendar fetch error:", e);
@@ -1767,7 +1782,7 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 }
             },
 
-            selectDate(dateStr) {
+            async selectDate(dateStr) {
                 this.selectedDate = dateStr;
                 const dt = new Date(dateStr + 'T00:00:00');
                 const headerDateEl = document.getElementById('calSelectedDateHeader');
@@ -1781,12 +1796,18 @@ window.togglePasswordVisibility = function(targetId, btn) {
 
                 this.renderMiniCalendar();
 
-                // Filter agenda to selected date or highlight
-                const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
-                if (matchingEvents.length > 0) {
-                    this.renderAgenda(matchingEvents);
-                } else {
-                    this.renderAgenda(this.eventsCache);
+                try {
+                    const res = await fetch(`/api/calendar/upcoming?limit=40&from=${dateStr}`);
+                    const data = await res.json();
+                    if (data.success && data.events && data.events.length) {
+                        this.renderAgenda(data.events);
+                    } else {
+                        const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
+                        this.renderAgenda(matchingEvents.length > 0 ? matchingEvents : this.eventsCache);
+                    }
+                } catch (e) {
+                    const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
+                    this.renderAgenda(matchingEvents.length > 0 ? matchingEvents : this.eventsCache);
                 }
             },
 

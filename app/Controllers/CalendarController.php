@@ -15,15 +15,19 @@ class CalendarController
     public function apiGetEvents(): void
     {
         $userId = (int)AuthService::id();
+        CalendarEvent::ensureUserHasEvents($userId);
+
         $date = trim((string)($_GET['date'] ?? ''));
         $month = isset($_GET['month']) ? (int)$_GET['month'] : 0;
         $year = isset($_GET['year']) ? (int)$_GET['year'] : 0;
 
         if (!empty($date)) {
             $events = CalendarEvent::getByDate($userId, $date);
+            $upcoming = CalendarEvent::getUpcoming($userId, 40, $date);
             Response::json([
                 'success' => true,
                 'events' => $events,
+                'upcoming' => $upcoming,
                 'date' => $date
             ]);
             return;
@@ -31,9 +35,17 @@ class CalendarController
 
         if ($month > 0 && $year > 0) {
             $events = CalendarEvent::getByMonth($userId, $year, $month);
+            $monthStart = sprintf('%04d-%02d-01', $year, $month);
+            $today = date('Y-m-d');
+            $currentYearMonth = date('Y-m');
+            $viewYearMonth = sprintf('%04d-%02d', $year, $month);
+            $agendaStart = ($viewYearMonth === $currentYearMonth) ? $today : $monthStart;
+            $upcoming = CalendarEvent::getUpcoming($userId, 40, $agendaStart);
+
             Response::json([
                 'success' => true,
                 'events' => $events,
+                'upcoming' => $upcoming,
                 'year' => $year,
                 'month' => $month
             ]);
@@ -44,7 +56,8 @@ class CalendarController
         $events = CalendarEvent::getUpcoming($userId);
         Response::json([
             'success' => true,
-            'events' => $events
+            'events' => $events,
+            'upcoming' => $events
         ]);
     }
 
@@ -54,8 +67,10 @@ class CalendarController
     public function apiGetUpcoming(): void
     {
         $userId = (int)AuthService::id();
-        $limit = min(50, max(5, (int)($_GET['limit'] ?? 30)));
-        $events = CalendarEvent::getUpcoming($userId, $limit);
+        CalendarEvent::ensureUserHasEvents($userId);
+        $limit = min(50, max(5, (int)($_GET['limit'] ?? 40)));
+        $from = trim((string)($_GET['from'] ?? ''));
+        $events = CalendarEvent::getUpcoming($userId, $limit, $from);
         Response::json([
             'success' => true,
             'events' => $events

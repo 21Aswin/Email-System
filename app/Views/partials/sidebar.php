@@ -73,6 +73,22 @@
                 </span>
             </a>
 
+            <!-- 7. Google-Style Calendar & Agenda Link -->
+            <button type="button" class="nav-item btn-sidebar-calendar" id="sidebarCalendarBtn" onclick="window.MailApp.calendar.toggle();" title="Google-style Calendar & Work Schedules">
+                <span class="nav-icon" style="color: #1a73e8;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="3" stroke="#1a73e8" fill="none"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="#1a73e8"></line>
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="#1a73e8"></line>
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="#1a73e8"></line>
+                    </svg>
+                </span>
+                <span class="nav-label" style="font-weight: 600;">Calendar</span>
+                <span class="nav-badge badge-neutral" style="background: #e8f0fe; color: #1a73e8; font-weight: 700;">
+                    <?= date('M j') ?>
+                </span>
+            </button>
+
             <!-- 7. More / Less Expandable Toggle Button -->
             <button type="button" class="nav-item btn-toggle-more" id="btnToggleMore" aria-expanded="false" aria-controls="moreNavSection">
                 <span class="nav-icon">

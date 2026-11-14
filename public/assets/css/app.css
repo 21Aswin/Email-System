@@ -3114,6 +3114,44 @@ button {
     background: #1d4ed8;
 }
 
+/* Calendar Backdrop for Mobile */
+.calendar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 2050;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.calendar-backdrop.show {
+    display: block;
+    opacity: 1;
+}
+
+.btn-sidebar-calendar {
+    width: 100%;
+    background: transparent;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+}
+.btn-sidebar-calendar:hover {
+    background-color: var(--beach-hover);
+}
+.btn-sidebar-calendar.active {
+    background-color: #e8f0fe !important;
+    color: #1a73e8 !important;
+    font-weight: 600;
+}
+
 @media (max-width: 900px) {
     .app-companion-rail {
         display: none;
@@ -3124,9 +3162,21 @@ button {
         top: 0;
         bottom: 0;
         width: 100%;
-        max-width: 320px;
+        max-width: 340px;
         box-sizing: border-box;
-        box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+        box-shadow: -6px 0 28px rgba(0, 0, 0, 0.28);
+        z-index: 2100;
+        background: #ffffff;
+        animation: calSlideIn 0.22s ease-out;
+    }
+
+    @keyframes calSlideIn {
+        from {
+            transform: translateX(100%);
+        }
+        to {
+            transform: translateX(0);
+        }
     }
 }
 
