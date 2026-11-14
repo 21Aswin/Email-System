@@ -206,20 +206,99 @@ try {
         CREATE TABLE IF NOT EXISTS `calendar_events` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             `user_id` INT UNSIGNED NOT NULL,
+            `message_id` INT UNSIGNED NULL DEFAULT NULL,
             `title` VARCHAR(255) NOT NULL,
+            `description` TEXT NULL,
+            `location` VARCHAR(255) NULL,
             `event_date` DATE NOT NULL,
             `start_time` TIME NULL,
             `end_time` TIME NULL,
-            `color` VARCHAR(20) NOT NULL DEFAULT '#188038',
-            `is_interview` TINYINT(1) NOT NULL DEFAULT 0,
-            `source_message_id` INT UNSIGNED NULL,
-            `description` TEXT NULL,
+            `is_all_day` TINYINT(1) NOT NULL DEFAULT 0,
+            `category` ENUM('interview', 'work', 'meeting', 'holiday', 'personal') NOT NULL DEFAULT 'interview',
+            `color` VARCHAR(30) NOT NULL DEFAULT '#10b981',
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-            INDEX `idx_cal_user_date` (`user_id`, `event_date`)
+            FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE SET NULL,
+            INDEX `idx_events_user_date` (`user_id`, `event_date`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // Self-healing check for calendar_events table (ensures is_all_day exists)
+    try {
+        $hasAllDay = $pdo->query("SHOW COLUMNS FROM calendar_events LIKE 'is_all_day'")->fetchAll();
+        if (empty($hasAllDay)) {
+            $pdo->exec("DROP TABLE IF EXISTS calendar_events;");
+            $pdo->exec("
+                CREATE TABLE `calendar_events` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NOT NULL,
+                    `message_id` INT UNSIGNED NULL DEFAULT NULL,
+                    `title` VARCHAR(255) NOT NULL,
+                    `description` TEXT NULL,
+                    `location` VARCHAR(255) NULL,
+                    `event_date` DATE NOT NULL,
+                    `start_time` TIME NULL,
+                    `end_time` TIME NULL,
+                    `is_all_day` TINYINT(1) NOT NULL DEFAULT 0,
+                    `category` ENUM('interview', 'work', 'meeting', 'holiday', 'personal') NOT NULL DEFAULT 'interview',
+                    `color` VARCHAR(30) NOT NULL DEFAULT '#10b981',
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                    FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE SET NULL,
+                    INDEX `idx_events_user_date` (`user_id`, `event_date`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
+
+        // Seed initial calendar events if empty
+        $calCount = (int)$pdo->query("SELECT COUNT(*) FROM calendar_events")->fetchColumn();
+        if ($calCount === 0) {
+            $year = (int)date('Y');
+            $curDate = date('Y-m-d');
+            $tomorrow = date('Y-m-d', strtotime('+1 day'));
+            $dayAfter = date('Y-m-d', strtotime('+2 days'));
+
+            $sampleEvents = [
+                ['title' => 'Technical Interview - Shanmuga Aswin (Full Stack Java)', 'desc' => 'Candidate discussion regarding Spring Boot, React & MySQL skills. Google Meet.', 'loc' => 'https://meet.google.com/nxw-inte-rvw', 'date' => $curDate, 'start' => '11:00:00', 'end' => '12:00:00', 'all_day' => 0, 'cat' => 'interview', 'color' => '#d97706'],
+                ['title' => 'Sprint Planning & Email Architecture Review', 'desc' => 'Sprint deliverables for Novalyx Cloud Webmail release.', 'loc' => 'Novalyx Conf Room A', 'date' => $tomorrow, 'start' => '14:30:00', 'end' => '15:30:00', 'all_day' => 0, 'cat' => 'work', 'color' => '#2563eb'],
+                ['title' => 'HR Round 2 & Resume Verification Call', 'desc' => 'Discussion on package and joining timeline.', 'loc' => 'Google Meet', 'date' => $dayAfter, 'start' => '16:00:00', 'end' => '16:45:00', 'all_day' => 0, 'cat' => 'interview', 'color' => '#d97706'],
+                ['title' => 'Bahag Bihu (Assam)', 'desc' => 'Regional Harvest Festival', 'loc' => 'India', 'date' => "{$year}-04-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Vaisakhadi (Bengal)', 'desc' => 'Bengali New Year', 'loc' => 'India', 'date' => "{$year}-04-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Buddha Purnima', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-05-01", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Birthday of Rabindranath Tagore', 'desc' => 'Cultural Observance', 'loc' => 'India', 'date' => "{$year}-05-09", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Bakrid / Eid al-Adha', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-05-28", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Muharram / Ashura', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-06-26", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Rath Yatra', 'desc' => 'Regional Festival', 'loc' => 'India', 'date' => "{$year}-07-16", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Independence Day', 'desc' => 'National Holiday', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Parsi New Year', 'desc' => 'Regional Festival', 'loc' => 'India', 'date' => "{$year}-08-15", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+                ['title' => 'Milad un-Nabi', 'desc' => 'National Gazetted Holiday', 'loc' => 'India', 'date' => "{$year}-08-26", 'start' => null, 'end' => null, 'all_day' => 1, 'cat' => 'holiday', 'color' => '#15803d'],
+            ];
+
+            $ins = $pdo->prepare("
+                INSERT INTO calendar_events (user_id, title, description, location, event_date, start_time, end_time, is_all_day, category, color)
+                VALUES (1, :title, :desc, :loc, :dt, :start, :end, :all_day, :cat, :col)
+            ");
+
+            foreach ($sampleEvents as $ev) {
+                $ins->execute([
+                    'title' => $ev['title'],
+                    'desc' => $ev['desc'],
+                    'loc' => $ev['loc'],
+                    'dt' => $ev['date'],
+                    'start' => $ev['start'],
+                    'end' => $ev['end'],
+                    'all_day' => $ev['all_day'],
+                    'cat' => $ev['cat'],
+                    'col' => $ev['color']
+                ]);
+            }
+            echo "      Seeded " . count($sampleEvents) . " initial calendar events & holidays.\n";
+        }
+    } catch (\Exception $e) {
+        echo "      Calendar setup note: " . $e->getMessage() . "\n";
+    }
 
     // 5. User settings & Blocked senders tables
     echo "[5/6] Verifying user settings and blocked senders tables...\n";
