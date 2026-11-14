@@ -4,6 +4,7 @@ set -e
 # Support dynamic port binding on Render ($PORT env var, default 80 or 10000)
 PORT_TO_USE="${PORT:-80}"
 echo "=> [1/4] Configuring Apache to listen on port ${PORT_TO_USE}..."
+echo "ServerName localhost" >> /etc/apache2/apache2.conf 2>/dev/null || true
 sed -i "s/<VirtualHost \*:.*>/<VirtualHost \*:${PORT_TO_USE}>/" /etc/apache2/sites-available/000-default.conf
 sed -i "s/Listen .*/Listen ${PORT_TO_USE}/" /etc/apache2/ports.conf
 
@@ -21,12 +22,21 @@ fi
 if [ "$IS_LOCAL" = "true" ] && [ -z "$DATABASE_URL" ]; then
     echo "=> [2/4] No external DB_HOST provided. Starting internal MariaDB database engine..."
     service mariadb start || /etc/init.d/mariadb start || true
-    sleep 2
+    sleep 3
 
     # Configure root access and create database
     mysql -e "CREATE DATABASE IF NOT EXISTS nkinfyx_email CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
-    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('Aswin@21'); FLUSH PRIVILEGES;" 2>/dev/null || true
-    mysql -u root -p'Aswin@21' -e "CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY 'Aswin@21'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION; FLUSH PRIVILEGES;" 2>/dev/null || true
+    mysql -e "CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY 'Aswin@21'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION; FLUSH PRIVILEGES;" 2>/dev/null || true
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY 'Aswin@21'; FLUSH PRIVILEGES;" 2>/dev/null || true
+
+    # Write /root/.my.cnf so mariadb-admin and service commands authenticate smoothly
+    mkdir -p /root
+    cat <<EOF > /root/.my.cnf
+[client]
+user=root
+password=Aswin@21
+EOF
+    chmod 600 /root/.my.cnf 2>/dev/null || true
 
     export DB_HOST="127.0.0.1"
     export DB_PORT="3306"

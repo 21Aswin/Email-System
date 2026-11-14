@@ -113,35 +113,77 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
         CREATE TABLE IF NOT EXISTS `message_labels` (
+            `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             `message_id` INT UNSIGNED NOT NULL,
             `label_id` INT UNSIGNED NOT NULL,
-            `user_id` INT UNSIGNED NOT NULL,
-            PRIMARY KEY (`message_id`, `label_id`),
             FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE,
-            FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+            UNIQUE KEY `uniq_message_label` (`message_id`, `label_id`),
+            INDEX `idx_msg_labels_label` (`label_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // Self-healing check for message_labels schema
+    try {
+        $hasIdCol = $pdo->query("SHOW COLUMNS FROM message_labels LIKE 'id'")->fetchAll();
+        if (empty($hasIdCol)) {
+            $pdo->exec("DROP TABLE IF EXISTS message_labels;");
+            $pdo->exec("
+                CREATE TABLE `message_labels` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `message_id` INT UNSIGNED NOT NULL,
+                    `label_id` INT UNSIGNED NOT NULL,
+                    FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
+                    FOREIGN KEY (`label_id`) REFERENCES `labels` (`id`) ON DELETE CASCADE,
+                    UNIQUE KEY `uniq_message_label` (`message_id`, `label_id`),
+                    INDEX `idx_msg_labels_label` (`label_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
+    } catch (\Exception $e) {}
 
     // 3. Attachments table
     echo "[3/6] Verifying attachments table...\n";
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS `attachments` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            `user_id` INT UNSIGNED NULL,
             `message_id` INT UNSIGNED NULL,
-            `user_id` INT UNSIGNED NOT NULL,
             `original_name` VARCHAR(255) NOT NULL,
-            `stored_filename` VARCHAR(255) NOT NULL,
-            `file_path` VARCHAR(500) NOT NULL,
-            `file_size` INT UNSIGNED NOT NULL DEFAULT 0,
-            `mime_type` VARCHAR(100) NOT NULL DEFAULT 'application/octet-stream',
+            `storage_name` VARCHAR(255) NOT NULL,
+            `mime_type` VARCHAR(120) NOT NULL DEFAULT 'application/octet-stream',
+            `size_bytes` BIGINT UNSIGNED NOT NULL DEFAULT 0,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
-            INDEX `idx_attachments_user` (`user_id`),
-            INDEX `idx_attachments_message` (`message_id`)
+            FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+            INDEX `idx_attachments_message` (`message_id`),
+            INDEX `idx_attachments_user` (`user_id`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     ");
+
+    // Self-healing check for attachments table (ensures storage_name exists)
+    try {
+        $hasStorageName = $pdo->query("SHOW COLUMNS FROM attachments LIKE 'storage_name'")->fetchAll();
+        if (empty($hasStorageName)) {
+            $pdo->exec("DROP TABLE IF EXISTS attachments;");
+            $pdo->exec("
+                CREATE TABLE `attachments` (
+                    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `user_id` INT UNSIGNED NULL,
+                    `message_id` INT UNSIGNED NULL,
+                    `original_name` VARCHAR(255) NOT NULL,
+                    `storage_name` VARCHAR(255) NOT NULL,
+                    `mime_type` VARCHAR(120) NOT NULL DEFAULT 'application/octet-stream',
+                    `size_bytes` BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
+                    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+                    INDEX `idx_attachments_message` (`message_id`),
+                    INDEX `idx_attachments_user` (`user_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        }
+    } catch (\Exception $e) {}
 
     // 4. Calendar events table
     echo "[4/6] Verifying calendar events table...\n";
