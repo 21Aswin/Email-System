@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="novalyxBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb" />
+      <stop offset="100%" stop-color="#0b57d0" />
+    </linearGradient>
+    <linearGradient id="novalyxBeach" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#e0a96d" />
+      <stop offset="100%" stop-color="#f5d6a8" />
+    </linearGradient>
+    <linearGradient id="novalyxGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#1d4ed8" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0b57d0" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Background Shield Rounded Rect -->
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="#ffffff" filter="url(#shadow)" />
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="none" stroke="#F0E8DF" stroke-width="2" />
+
+  <!-- Novalyx Modern Geometric 'N' & Cloud Polyhedron -->
+  <!-- Left Pillar -->
+  <path d="M 34 88 L 34 40 C 34 36.68 36.68 34 40 34 L 46 34 C 49.32 34 52 36.68 52 40 L 52 88 C 52 91.32 49.32 94 46 94 L 40 94 C 36.68 94 34 91.32 34 88 Z" fill="url(#novalyxBlue)" />
+
+  <!-- Diagonal Dynamic Nexus -->
+  <path d="M 46 38 L 84 86 C 86.2 88.8 90.3 87.2 90.3 83.6 L 90.3 74 L 52 48 Z" fill="url(#novalyxGlow)" opacity="0.95" />
+
+  <!-- Right Pillar with Warm Beach Accent -->
+  <path d="M 76 88 L 76 40 C 76 36.68 78.68 34 82 34 L 88 34 C 91.32 34 94 36.68 94 40 L 94 88 C 94 91.32 91.32 94 88 94 L 82 94 C 78.68 94 76 91.32 76 88 Z" fill="url(#novalyxBlue)" />
+
+  <!-- Tech Cloud Sparkle Star / Nexus Node -->
+  <circle cx="92" cy="36" r="7" fill="url(#novalyxBeach)" />
+  <circle cx="36" cy="92" r="4" fill="url(#novalyxBeach)" />
+</svg>

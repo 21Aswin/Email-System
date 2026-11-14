@@ -1,0 +1,62 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Core;
+
+use PDO;
+use PDOException;
+
+class Database
+{
+    private static ?PDO $instance = null;
+
+    public static function getConnection(): PDO
+    {
+        if (self::$instance === null) {
+            $host = Env::get('DB_HOST', 'localhost');
+            $port = Env::get('DB_PORT', '3306');
+            $dbName = Env::get('DB_DATABASE', 'nkinfyx_email');
+            $user = Env::get('DB_USERNAME', 'root');
+            $pass = Env::get('DB_PASSWORD', '');
+
+            $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4";
+
+            $options = [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                PDO::ATTR_EMULATE_PREPARES => false,
+            ];
+
+            try {
+                self::$instance = new PDO($dsn, $user, $pass, $options);
+                self::$instance->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+                self::$instance->exec("SET time_zone = '+05:30'");
+            } catch (PDOException $e) {
+                // Return descriptive error or rethrow
+                throw new PDOException("Database connection error: " . $e->getMessage(), (int)$e->getCode());
+            }
+        }
+
+        return self::$instance;
+    }
+
+    /**
+     * For migration/installation when the database might not yet exist
+     */
+    public static function getRootConnection(): PDO
+    {
+        $host = Env::get('DB_HOST', 'localhost');
+        $port = Env::get('DB_PORT', '3306');
+        $user = Env::get('DB_USERNAME', 'root');
+        $pass = Env::get('DB_PASSWORD', '');
+
+        $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
+        $options = [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => false,
+        ];
+
+        return new PDO($dsn, $user, $pass, $options);
+    }
+}

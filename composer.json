@@ -1,0 +1,14 @@
+{
+    "name": "nkinfyx/email-web-app",
+    "description": "Production-minded responsive web email application for nkinfyx groups",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    }
+}
