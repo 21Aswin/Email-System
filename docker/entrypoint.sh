@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-# Support dynamic port binding on Render, Railway, or Heroku ($PORT env var)
+# Support dynamic port binding on Render ($PORT env var, default 80 or 10000)
 PORT_TO_USE="${PORT:-80}"
-echo "=> Configuring Apache to listen on port ${PORT_TO_USE}..."
+echo "=> [1/4] Configuring Apache to listen on port ${PORT_TO_USE}..."
 sed -i "s/<VirtualHost \*:.*>/<VirtualHost \*:${PORT_TO_USE}>/" /etc/apache2/sites-available/000-default.conf
 sed -i "s/Listen .*/Listen ${PORT_TO_USE}/" /etc/apache2/ports.conf
 
@@ -12,13 +12,34 @@ mkdir -p /var/www/html/storage/attachments /var/www/html/public/uploads/avatars
 chown -R www-data:www-data /var/www/html/storage /var/www/html/public/uploads 2>/dev/null || true
 chmod -R 775 /var/www/html/storage /var/www/html/public/uploads 2>/dev/null || true
 
-# Run database migrations if DB_HOST or DATABASE_URL is set
-if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ]; then
-    echo "=> Database credentials detected. Running migrations..."
-    php database/run_all_migrations.php || echo "=> Warning: Migrations will retry on next deployment or when DB is fully reachable."
-else
-    echo "=> Note: No DB_HOST or DATABASE_URL specified yet. Please set environment variables in Render Dashboard."
+# Determine if we should start built-in MariaDB database
+IS_LOCAL=false
+if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ] || [ "$DB_HOST" = "localhost" ]; then
+    IS_LOCAL=true
 fi
 
-echo "=> Launching Apache in foreground on port ${PORT_TO_USE}..."
+if [ "$IS_LOCAL" = "true" ] && [ -z "$DATABASE_URL" ]; then
+    echo "=> [2/4] No external DB_HOST provided. Starting internal MariaDB database engine..."
+    service mariadb start || /etc/init.d/mariadb start || true
+    sleep 2
+
+    # Configure root access and create database
+    mysql -e "CREATE DATABASE IF NOT EXISTS nkinfyx_email CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>/dev/null || true
+    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password USING PASSWORD('Aswin@21'); FLUSH PRIVILEGES;" 2>/dev/null || true
+    mysql -u root -p'Aswin@21' -e "CREATE USER IF NOT EXISTS 'root'@'127.0.0.1' IDENTIFIED BY 'Aswin@21'; GRANT ALL PRIVILEGES ON *.* TO 'root'@'127.0.0.1' WITH GRANT OPTION; FLUSH PRIVILEGES;" 2>/dev/null || true
+
+    export DB_HOST="127.0.0.1"
+    export DB_PORT="3306"
+    export DB_DATABASE="nkinfyx_email"
+    export DB_USERNAME="root"
+    export DB_PASSWORD="Aswin@21"
+else
+    echo "=> [2/4] Connecting to external MySQL database: ${DB_HOST:-$DATABASE_URL}"
+fi
+
+# Run database migrations & seeding
+echo "=> [3/4] Running automated database migrations & seeding..."
+php database/run_all_migrations.php || echo "=> Warning: Migrations encountered an issue or database is starting up. Retrying..."
+
+echo "=> [4/4] Launching Apache web server on port ${PORT_TO_USE}..."
 exec apache2-foreground

@@ -1,73 +1,56 @@
 # Render.com Deployment Guide - Novalyx Cloud Webmail
 
-This repository is pre-configured for one-click deployment on **[Render](https://render.com/)** using Docker.
+This repository is **100% plug-and-play ready** for instant deployment on **[Render](https://render.com/)**.
 
 ---
 
-## 🚀 Quick Step-by-Step Instructions
+## ⚡ Option 1: 1-Click Instant Deployment (Zero Setup Needed!)
 
-### Step 1: Connect GitHub Repository to Render
-1. Log in to [dashboard.render.com](https://dashboard.render.com/).
-2. Click **New +** and select **Web Service** (or **Blueprint** if using `render.yaml`).
+You don't need to configure an external database unless you want to! The container includes an internal MariaDB database engine pre-configured for automated startup.
+
+### Steps:
+1. Open [dashboard.render.com](https://dashboard.render.com/).
+2. Click **New +** and select **Web Service**.
 3. Connect your GitHub repository:
    ```
    https://github.com/21Aswin/Email-System.git
    ```
-4. Choose **Docker** as the Runtime (Render will automatically detect the root `Dockerfile`).
+4. Render will automatically detect the **Dockerfile** in the repository root.
 5. Select the **Free** instance plan.
+6. Click **Create Web Service**!
+7. Render will build and deploy the application.
+8. Once deployment finishes, open your live URL (e.g., `https://your-app-name.onrender.com/login`).
 
 ---
 
-### Step 2: Setup a Free Cloud MySQL Database
-Render provides native PostgreSQL, but this PHP webmail uses MySQL / MariaDB. You can get a free MySQL database in 1 minute from any of the following providers:
-- **[Aiven for MySQL](https://aiven.io/)** (Free tier with 5 GB storage)
-- **[Railway.app](https://railway.app/)** (One-click MySQL plugin with free tier credits)
-- **[Clever Cloud](https://www.clever-cloud.com/)** (Free MySQL database)
-- **[TiDB Cloud Serverless](https://tidbcloud.com/)** (Free MySQL-compatible cloud database)
+## 🔑 Default Sign In Credentials
+
+Once deployed on Render, sign in with the pre-seeded administrator credentials:
+- **Email:** `adminnkinflyx@gmail.com`
+- **Password:** `password123`
 
 ---
 
-### Step 3: Configure Environment Variables in Render Dashboard
-In your Render Web Service settings, go to the **Environment** tab and add the following variables:
+## 🌐 Option 2: Using an External Cloud MySQL Database (Optional)
 
-| Key | Example Value | Description |
-|---|---|---|
-| `APP_ENV` | `production` | Production environment mode |
-| `APP_DEBUG` | `false` | Disable error stack traces in production |
-| `APP_URL` | `https://your-app-name.onrender.com` | Your live Render URL |
-| `DB_HOST` | `mysql-xxxx.aivencloud.com` | Remote MySQL server hostname |
-| `DB_PORT` | `3306` (or provided port) | Remote MySQL port |
-| `DB_DATABASE` | `defaultdb` (or `nkinfyx_email`) | Remote database name |
-| `DB_USERNAME` | `avnadmin` | MySQL username |
-| `DB_PASSWORD` | `your_remote_password` | MySQL user password |
-| *or* `DATABASE_URL` | `mysql://user:pass@host:port/dbname` | Full MySQL connection URL string |
-| `APP_KEY` | *(Click 'Generate')* | Random encryption secret key |
-| `SESSION_LIFETIME` | `604800` | Session duration (7 days) |
+If you prefer to connect an external managed MySQL database (like Aiven, Railway, TiDB, or PlanetScale), simply go to the **Environment** tab in your Render Web Service settings and add:
 
-#### Optional SMTP Relay (for sending real emails)
-| Key | Example Value |
-|---|---|
-| `SMTP_ENABLED` | `true` |
-| `SMTP_HOST` | `smtp.gmail.com` |
-| `SMTP_PORT` | `587` |
-| `SMTP_ENCRYPTION` | `tls` |
-| `SMTP_USERNAME` | `your-email@gmail.com` |
-| `SMTP_PASSWORD` | `your-google-app-password` |
-| `SMTP_FROM_ADDRESS` | `your-email@gmail.com` |
-| `SMTP_FROM_NAME` | `Novalyx Cloud Mail` |
+- `DB_HOST`: `your-remote-db-host.com`
+- `DB_PORT`: `3306`
+- `DB_DATABASE`: `your_database_name`
+- `DB_USERNAME`: `your_database_username`
+- `DB_PASSWORD`: `your_database_password`
+*(Or `DATABASE_URL` = `mysql://user:pass@host:port/dbname`)*
+
+The container will automatically detect the external `DB_HOST` and connect to it instead of the local engine!
 
 ---
 
-### Step 4: Deploy & Automated Database Initialization
-1. Click **Create Web Service** or **Deploy**.
-2. Render will build the Docker container and start the service.
-3. During container startup, `docker-entrypoint.sh` automatically runs `database/run_all_migrations.php`:
-   - Automatically provisions all tables (`users`, `messages`, `labels`, `attachments`, `calendar_events`, `user_settings`, `blocked_senders`).
-   - Seeds the default admin account:
-     - **Email:** `adminnkinflyx@gmail.com`
-     - **Password:** `password123`
-4. Once deployed, open your Render web address:
-   ```
-   https://your-app-name.onrender.com/login
-   ```
-5. Sign in and enjoy your full Novalyx Cloud Webmail with responsive design, Settings area, Calendar, and attachments!
+## 📧 Outbound Real SMTP Configuration
+
+Real SMTP sending is already pre-configured in `render.yaml` with Google SMTP credentials:
+- **SMTP Server:** `smtp.gmail.com:587`
+- **Account:** `novalyx.workspace@gmail.com`
+- **Encryption:** `TLS`
+
+Emails sent from the Compose window will be delivered to real recipient inboxes worldwide!

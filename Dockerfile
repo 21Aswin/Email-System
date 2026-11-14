@@ -3,8 +3,9 @@
 # ===================================================================
 FROM php:8.2-apache
 
-# Install required system packages and PHP extensions
+# Install required system packages, MariaDB server (self-contained fallback), and PHP extensions
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    mariadb-server \
     libpng-dev \
     libjpeg-dev \
     libwebp-dev \

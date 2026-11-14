@@ -40,6 +40,16 @@ class Env
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        return self::$vars[$key] ?? $_ENV[$key] ?? getenv($key) ?: $default;
+        if (array_key_exists($key, self::$vars)) {
+            return self::$vars[$key];
+        }
+        if (isset($_ENV[$key])) {
+            return $_ENV[$key];
+        }
+        $val = getenv($key);
+        if ($val !== false) {
+            return $val;
+        }
+        return $default;
     }
 }
