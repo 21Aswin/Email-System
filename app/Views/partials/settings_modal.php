@@ -67,7 +67,19 @@
 
                     <div class="form-row">
                         <label for="settingSmtpPassword" class="modal-label">SMTP Password / Google App Password</label>
-                        <input type="password" id="settingSmtpPassword" class="form-input" placeholder="Enter Gmail App Password (16 chars)" value="<?= \App\Core\View::e(\App\Core\Env::get('SMTP_PASSWORD', '')) ?>">
+                        <div class="input-icon-wrapper" style="width: 100%;">
+                            <input type="password" id="settingSmtpPassword" class="form-input has-toggle" style="padding-left: 12px;" placeholder="Enter Gmail App Password (16 chars)" value="<?= \App\Core\View::e(\App\Core\Env::get('SMTP_PASSWORD', '')) ?>">
+                            <button type="button" class="btn-password-toggle" onclick="togglePasswordVisibility('settingSmtpPassword', this)" title="Show password" aria-label="Show password">
+                                <svg class="icon-eye" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                                <svg class="icon-eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                                </svg>
+                            </button>
+                        </div>
                         <small class="form-hint" style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
                             For Gmail: generate an <strong>App Password</strong> at <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color: var(--brand-primary);">myaccount.google.com/apppasswords</a> with 2-Step Verification on.
                         </small>

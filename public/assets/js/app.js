@@ -1,6 +1,21 @@
 /**
  * nkinfyx groups Webmail - Client Controller
  */
+window.togglePasswordVisibility = function(targetId, btn) {
+    const input = document.getElementById(targetId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    btn.title = isPassword ? 'Hide password' : 'Show password';
+    const iconEye = btn.querySelector('.icon-eye');
+    const iconEyeOff = btn.querySelector('.icon-eye-off');
+    if (iconEye && iconEyeOff) {
+        iconEye.style.display = isPassword ? 'none' : 'block';
+        iconEyeOff.style.display = isPassword ? 'block' : 'none';
+    }
+};
+
 (function() {
     'use strict';
 

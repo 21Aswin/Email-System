@@ -2,9 +2,7 @@
 .env
 
 # Uploaded test attachments & binary files
-storage/attachments/att_0*
-storage/attachments/att_a*
-storage/attachments/att_f*
+storage/attachments/att_*
 storage/attachments/*.tmp
 
 # Playwright & test artifacts

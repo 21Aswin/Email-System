@@ -1674,6 +1674,44 @@ button {
     padding-left: 38px;
 }
 
+.input-icon-wrapper .form-input.has-toggle {
+    padding-right: 42px;
+}
+
+/* Password Visibility Toggle Button */
+.btn-password-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 50%;
+    transition: color 0.15s, background-color 0.15s, transform 0.1s;
+    line-height: 1;
+    z-index: 2;
+}
+
+.btn-password-toggle:hover {
+    color: var(--brand-primary);
+    background-color: rgba(26, 115, 232, 0.08);
+}
+
+.btn-password-toggle:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+.btn-password-toggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
 .form-helper-row {
     display: flex;
     justify-content: space-between;
