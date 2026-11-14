@@ -90,18 +90,33 @@ try {
             `is_starred` TINYINT(1) NOT NULL DEFAULT 0,
             `is_important` TINYINT(1) NOT NULL DEFAULT 0,
             `is_draft` TINYINT(1) NOT NULL DEFAULT 0,
-            `snooze_until` DATETIME NULL,
-            `scheduled_at` DATETIME NULL,
+            `snoozed_until` DATETIME NULL DEFAULT NULL,
+            `scheduled_at` DATETIME NULL DEFAULT NULL,
             `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
             FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
             UNIQUE KEY `uniq_user_message` (`user_id`, `message_id`),
             INDEX `idx_mailbox_user_folder` (`user_id`, `folder`, `category`),
-            INDEX `idx_mailbox_snooze` (`snooze_until`),
+            INDEX `idx_mailbox_snooze` (`snoozed_until`),
             INDEX `idx_mailbox_scheduled` (`scheduled_at`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    ");
 
+    // Self-healing check for mailbox_items snoozed_until column
+    try {
+        $hasSnoozedCol = $pdo->query("SHOW COLUMNS FROM mailbox_items LIKE 'snoozed_until'")->fetchAll();
+        if (empty($hasSnoozedCol)) {
+            $hasSnoozeNoD = $pdo->query("SHOW COLUMNS FROM mailbox_items LIKE 'snooze_until'")->fetchAll();
+            if (!empty($hasSnoozeNoD)) {
+                $pdo->exec("ALTER TABLE mailbox_items CHANGE COLUMN snooze_until snoozed_until DATETIME NULL DEFAULT NULL;");
+            } else {
+                $pdo->exec("ALTER TABLE mailbox_items ADD COLUMN snoozed_until DATETIME NULL DEFAULT NULL AFTER is_important;");
+            }
+        }
+    } catch (\Exception $e) {}
+
+    $pdo->exec("
         CREATE TABLE IF NOT EXISTS `labels` (
             `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             `user_id` INT UNSIGNED NOT NULL,

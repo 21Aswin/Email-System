@@ -106,5 +106,27 @@ $router->get('/api/calendar/upcoming', [\App\Controllers\CalendarController::cla
 $router->post('/api/calendar/events', [\App\Controllers\CalendarController::class, 'apiCreateEvent'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/calendar/events/delete', [\App\Controllers\CalendarController::class, 'apiDeleteEvent'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 
-// Dispatch incoming request
-$router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
+// Dispatch incoming request with robust error handling
+try {
+    $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
+} catch (\Throwable $e) {
+    error_log("UNCAUGHT EXCEPTION: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    http_response_code(500);
+    $showDetails = filter_var(\App\Core\Env::get('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN) || isset($_GET['debug']);
+    if ($showDetails) {
+        echo "<div style='font-family:-apple-system,BlinkMacSystemFont,sans-serif; padding:30px; background:#fff1f0; border:1px solid #ffa39e; margin:20px; border-radius:8px;'>";
+        echo "<h2 style='color:#cf1322; margin-top:0;'>Application Error (500)</h2>";
+        echo "<p style='font-size:16px;'><strong>Message:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+        echo "<p><strong>Location:</strong> " . htmlspecialchars($e->getFile()) . " (Line " . $e->getLine() . ")</p>";
+        echo "<h3 style='margin-top:20px;'>Stack Trace:</h3>";
+        echo "<pre style='background:#ffffff; padding:15px; border:1px solid #d9d9d9; border-radius:6px; overflow:auto; font-size:13px; line-height:1.5;'>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+        echo "</div>";
+    } else {
+        echo "<div style='font-family:-apple-system,BlinkMacSystemFont,sans-serif; text-align:center; padding:80px 20px;'>";
+        echo "<h1 style='color:#1a73e8; font-size:56px; margin:0;'>500</h1>";
+        echo "<h2 style='color:#202124; margin:12px 0;'>Internal Server Error</h2>";
+        echo "<p style='color:#5f6368; max-width:480px; margin:0 auto 24px;'>An unexpected server error occurred. Please try again or contact support.</p>";
+        echo "<a href='/login' style='display:inline-block; padding:10px 24px; background:#1a73e8; color:#ffffff; text-decoration:none; border-radius:6px; font-weight:600;'>Return to Sign In</a>";
+        echo "</div>";
+    }
+}
