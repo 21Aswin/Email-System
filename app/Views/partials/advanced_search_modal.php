@@ -44,14 +44,30 @@
 
                 <div class="form-row">
                     <label for="advFolder" class="modal-label">Mailbox Scope</label>
-                    <select id="advFolder" class="form-input">
-                        <option value="all">All Mail (Archive)</option>
-                        <option value="inbox" selected>Inbox</option>
-                        <option value="sent">Sent</option>
-                        <option value="drafts">Drafts</option>
-                        <option value="spam">Spam</option>
-                        <option value="trash">Trash</option>
-                    </select>
+                    <div class="custom-select-container" id="customAdvFolderContainer">
+                        <button type="button" class="custom-select-trigger" id="customAdvFolderTrigger" aria-haspopup="listbox" aria-expanded="false" onclick="window.MailApp.toggleCustomAdvFolder(event)">
+                            <span class="custom-select-label" id="customAdvFolderLabel">Inbox</span>
+                            <svg class="custom-select-arrow" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 10l5 5 5-5z"/>
+                            </svg>
+                        </button>
+                        <div class="custom-select-dropdown" id="customAdvFolderDropdown" role="listbox">
+                            <div class="custom-select-option" data-value="all" onclick="window.MailApp.selectCustomAdvFolder('all', 'All Mail (Archive)')">All Mail (Archive)</div>
+                            <div class="custom-select-option selected" data-value="inbox" onclick="window.MailApp.selectCustomAdvFolder('inbox', 'Inbox')">Inbox</div>
+                            <div class="custom-select-option" data-value="sent" onclick="window.MailApp.selectCustomAdvFolder('sent', 'Sent')">Sent</div>
+                            <div class="custom-select-option" data-value="drafts" onclick="window.MailApp.selectCustomAdvFolder('drafts', 'Drafts')">Drafts</div>
+                            <div class="custom-select-option" data-value="spam" onclick="window.MailApp.selectCustomAdvFolder('spam', 'Spam')">Spam</div>
+                            <div class="custom-select-option" data-value="trash" onclick="window.MailApp.selectCustomAdvFolder('trash', 'Trash')">Trash</div>
+                        </div>
+                        <select id="advFolder" name="folder" class="form-input" style="display: none;" tabindex="-1" aria-hidden="true">
+                            <option value="all">All Mail (Archive)</option>
+                            <option value="inbox" selected>Inbox</option>
+                            <option value="sent">Sent</option>
+                            <option value="drafts">Drafts</option>
+                            <option value="spam">Spam</option>
+                            <option value="trash">Trash</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 

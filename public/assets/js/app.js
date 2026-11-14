@@ -48,6 +48,13 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 document.addEventListener('click', () => userDropdown.classList.remove('show'));
             }
 
+            // Close custom select dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#customAdvFolderContainer')) {
+                    this.closeCustomAdvFolder();
+                }
+            });
+
             // Sidebar toggle (Desktop: Collapse/Expand mini bar | Mobile: Open/Close drawer)
             const sidebarToggle = document.getElementById('sidebarToggle');
             const sidebar = document.getElementById('appSidebar');
@@ -995,10 +1002,66 @@ window.togglePasswordVisibility = function(targetId, btn) {
 
         closeAdvancedSearch() {
             document.getElementById('advancedSearchModal').style.display = 'none';
+            this.closeCustomAdvFolder();
+        },
+
+        toggleCustomAdvFolder(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const dropdown = document.getElementById('customAdvFolderDropdown');
+            const trigger = document.getElementById('customAdvFolderTrigger');
+            const container = document.getElementById('customAdvFolderContainer');
+            if (!dropdown || !trigger || !container) return;
+
+            const isOpen = dropdown.classList.contains('show');
+            if (isOpen) {
+                dropdown.classList.remove('show');
+                dropdown.classList.remove('open-up');
+                trigger.setAttribute('aria-expanded', 'false');
+            } else {
+                // Auto detect if it should open upwards
+                const rect = container.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                if (spaceBelow < 220 && rect.top > 200) {
+                    dropdown.classList.add('open-up');
+                } else {
+                    dropdown.classList.remove('open-up');
+                }
+                dropdown.classList.add('show');
+                trigger.setAttribute('aria-expanded', 'true');
+            }
+        },
+
+        selectCustomAdvFolder(val, label) {
+            const selectEl = document.getElementById('advFolder');
+            const labelEl = document.getElementById('customAdvFolderLabel');
+            const dropdown = document.getElementById('customAdvFolderDropdown');
+            const trigger = document.getElementById('customAdvFolderTrigger');
+
+            if (selectEl) selectEl.value = val;
+            if (labelEl) labelEl.textContent = label;
+
+            if (dropdown) {
+                dropdown.querySelectorAll('.custom-select-option').forEach(opt => {
+                    opt.classList.toggle('selected', opt.dataset.value === val);
+                });
+                dropdown.classList.remove('show');
+            }
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        },
+
+        closeCustomAdvFolder() {
+            const dropdown = document.getElementById('customAdvFolderDropdown');
+            const trigger = document.getElementById('customAdvFolderTrigger');
+            if (dropdown) dropdown.classList.remove('show');
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
         },
 
         resetAdvancedSearch() {
             document.getElementById('advancedSearchForm').reset();
+            this.selectCustomAdvFolder('inbox', 'Inbox');
         },
 
         submitAdvancedSearch() {
