@@ -57,7 +57,12 @@ class MailService
         $senderEmail = $user['email'];
         $senderName = $user['display_name'];
 
-        $toRaw = trim($data['to'] ?? '');
+        $toRaw = is_array($data['to'] ?? null) ? implode(',', $data['to']) : (string)($data['to'] ?? '');
+        $ccRaw = is_array($data['cc'] ?? null) ? implode(',', $data['cc']) : (string)($data['cc'] ?? '');
+        $bccRaw = is_array($data['bcc'] ?? null) ? implode(',', $data['bcc']) : (string)($data['bcc'] ?? '');
+        $toRaw = trim($toRaw);
+        $ccRaw = trim($ccRaw);
+        $bccRaw = trim($bccRaw);
         $subject = trim($data['subject'] ?? '') ?: ($isDraft ? '(Draft without subject)' : '(no subject)');
         $bodyHtml = self::sanitizeHtml($data['body_html'] ?? '');
         $bodyText = strip_tags($bodyHtml);
@@ -70,6 +75,22 @@ class MailService
             foreach ($toAddresses as $addr) {
                 if (filter_var($addr, FILTER_VALIDATE_EMAIL)) {
                     $recipients[] = ['type' => 'to', 'email' => strtolower($addr), 'name' => ''];
+                }
+            }
+        }
+        if (!empty($ccRaw)) {
+            $ccAddresses = array_filter(array_map('trim', explode(',', $ccRaw)));
+            foreach ($ccAddresses as $addr) {
+                if (filter_var($addr, FILTER_VALIDATE_EMAIL)) {
+                    $recipients[] = ['type' => 'cc', 'email' => strtolower($addr), 'name' => ''];
+                }
+            }
+        }
+        if (!empty($bccRaw)) {
+            $bccAddresses = array_filter(array_map('trim', explode(',', $bccRaw)));
+            foreach ($bccAddresses as $addr) {
+                if (filter_var($addr, FILTER_VALIDATE_EMAIL)) {
+                    $recipients[] = ['type' => 'bcc', 'email' => strtolower($addr), 'name' => ''];
                 }
             }
         }
