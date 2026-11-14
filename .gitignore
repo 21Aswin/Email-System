@@ -4,6 +4,7 @@
 # Uploaded test attachments & binary files
 storage/attachments/att_*
 storage/attachments/*.tmp
+public/uploads/avatars/avatar_*
 
 # Playwright & test artifacts
 .playwright-mcp/

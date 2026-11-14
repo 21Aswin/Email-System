@@ -1,5 +1,12 @@
+<?php
+$layoutUser = $user ?? \App\Services\AuthService::user();
+$layoutUserId = (int)($layoutUser['id'] ?? 0);
+$layoutSettings = $settings ?? ($layoutUserId > 0 ? \App\Models\UserSettings::get($layoutUserId) : []);
+$activeTheme = $layoutSettings['theme'] ?? 'system';
+$activeDensity = $layoutSettings['density'] ?? 'comfortable';
+?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="<?= \App\Core\View::e($activeTheme) ?>" data-density="<?= \App\Core\View::e($activeDensity) ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,7 +22,7 @@
     <!-- App Styles -->
     <link rel="stylesheet" href="/assets/css/app.css">
 </head>
-<body class="nkinfyx-app">
+<body class="nkinfyx-app" data-theme="<?= \App\Core\View::e($activeTheme) ?>" data-density="<?= \App\Core\View::e($activeDensity) ?>">
     <!-- Sidebar Backdrop Overlay for Mobile -->
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
@@ -73,6 +80,11 @@
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+    <!-- Inject User Settings into Global Client Scope -->
+    <script>
+        window.CURRENT_USER_SETTINGS = <?= json_encode($layoutSettings, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    </script>
 
     <!-- App Scripts -->
     <script src="/assets/js/app.js"></script>

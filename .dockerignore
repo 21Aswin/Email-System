@@ -1,0 +1,14 @@
+.git
+.github
+.playwright-mcp
+node_modules
+*.log
+.env
+.env.backup
+storage/attachments/*
+!storage/attachments/.gitkeep
+public/uploads/avatars/*
+!public/uploads/avatars/.gitkeep
+tmp
+.vscode
+.idea

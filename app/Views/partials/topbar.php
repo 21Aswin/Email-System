@@ -51,6 +51,14 @@
             </svg>
         </button>
 
+        <!-- Settings Gear Button -->
+        <a href="/settings" class="btn-icon btn-topbar-settings" id="topbarSettingsBtn" title="Settings" aria-label="Settings">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </a>
+
         <!-- Status indicator -->
         <div class="status-pill" id="networkStatusPill" title="Connected to nkinfyx Enterprise Server">
             <span class="status-dot"></span>
@@ -60,16 +68,24 @@
         <!-- User profile dropdown -->
         <div class="user-profile-menu">
             <button type="button" class="user-avatar-btn" id="userMenuToggle" aria-expanded="false" aria-label="User account menu">
-                <span class="user-avatar-letter">
-                    <?= strtoupper(substr($user['display_name'] ?? 'A', 0, 1)) ?>
-                </span>
+                <?php if (!empty($user['avatar_path'])): ?>
+                    <img src="<?= \App\Core\View::e($user['avatar_path']) ?>" alt="Avatar" class="user-avatar-img">
+                <?php else: ?>
+                    <span class="user-avatar-letter">
+                        <?= strtoupper(substr($user['display_name'] ?? 'A', 0, 1)) ?>
+                    </span>
+                <?php endif; ?>
             </button>
 
             <div class="dropdown-menu profile-dropdown" id="userDropdown">
                 <div class="profile-dropdown-header">
-                    <div class="user-avatar-lg">
-                        <?= strtoupper(substr($user['display_name'] ?? 'A', 0, 1)) ?>
-                    </div>
+                    <?php if (!empty($user['avatar_path'])): ?>
+                        <img src="<?= \App\Core\View::e($user['avatar_path']) ?>" alt="Avatar" class="user-avatar-img-lg">
+                    <?php else: ?>
+                        <div class="user-avatar-lg">
+                            <?= strtoupper(substr($user['display_name'] ?? 'A', 0, 1)) ?>
+                        </div>
+                    <?php endif; ?>
                     <div class="profile-info">
                         <strong class="profile-name"><?= \App\Core\View::e($user['display_name'] ?? 'User') ?></strong>
                         <span class="profile-email"><?= \App\Core\View::e($user['email'] ?? 'novalyx.workspace@gmail.com') ?></span>
@@ -80,8 +96,13 @@
                 <div class="dropdown-divider"></div>
 
                 <div class="profile-dropdown-actions">
-                    <button type="button" class="dropdown-item" onclick="window.MailApp.openSettingsModal()">
+                    <a href="/settings" class="dropdown-item">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span>All Settings</span>
+                    </a>
+
+                    <button type="button" class="dropdown-item" onclick="window.MailApp.openSettingsModal()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
                         <span>Mail Delivery / SMTP</span>
                     </button>
 

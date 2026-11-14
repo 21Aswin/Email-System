@@ -1,0 +1,54 @@
+services:
+  - type: web
+    name: novalyx-email-webmail
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Dockerfile
+    healthCheckPath: /login
+    autoDeploy: true
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_NAME
+        value: "Novalyx Cloud Webmail"
+      - key: APP_URL
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: APP_KEY
+        generateValue: true
+      - key: SESSION_LIFETIME
+        value: "604800"
+      - key: SMTP_ENABLED
+        value: "false"
+      - key: SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_ENCRYPTION
+        value: "tls"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM_ADDRESS
+        sync: false
+      - key: SMTP_FROM_NAME
+        value: "Novalyx Cloud"
+      - key: MAX_ATTACHMENT_SIZE_MB
+        value: "15"
+      - key: STORAGE_PATH
+        value: "storage/attachments"

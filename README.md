@@ -244,14 +244,28 @@ c:\Users\Sampath\Desktop\Email\
 │           └── topbar.php
 ├── database/
 │   ├── migrate.php
+│   ├── migrate_attachments.php
+│   ├── migrate_calendar.php
+│   ├── migrate_settings.php
+│   ├── migrate_sidebar.php
+│   ├── run_all_migrations.php
 │   ├── schema.sql
 │   └── seed.sql
+├── docker/
+│   ├── apache.conf
+│   └── entrypoint.sh
+├── Dockerfile
+├── render.yaml
+├── DEPLOY_RENDER.md
 ├── public/
 │   ├── assets/
 │   │   ├── css/
 │   │   │   └── app.css
 │   │   └── js/
-│   │       └── app.js
+│   │       ├── app.js
+│   │       └── settings.js
+│   ├── uploads/
+│   │   └── avatars/
 │   ├── .htaccess
 │   └── index.php
 ├── storage/
@@ -265,6 +279,33 @@ c:\Users\Sampath\Desktop\Email\
 ├── README.md
 └── server.php
 ```
+
+---
+
+## ⚙️ Settings Area Architecture
+The app features an integrated Settings hub (`/settings`) matching the Novalyx design system with 12 distinct setting panels:
+1. **Profile:** Display name updates and secure avatar photo upload (MIME validation, 2MB limit, randomized hash storage).
+2. **Account:** Read-only verified email display, password change with current password bcrypt verification.
+3. **Appearance:** Light / Dark / System theme switching and Comfortable / Compact density toggles (persisted to MySQL).
+4. **Inbox Preferences:** Default login folder, default category, category tabs toggle, and unread vs total counter badges.
+5. **Notifications:** In-app toast banners and HTML5 desktop browser notification permissions.
+6. **Signature:** Plain-text custom signature automatically inserted into new compose drafts separated by standard `--`.
+7. **Compose & Reply:** Default reply vs reply-all behavior, draft discard confirmation prompt, auto-save toggle.
+8. **Labels:** Integrated label manager with color swatches and instant label deletion.
+9. **Blocked Senders:** Block unwanted sender email addresses with automatic database persistence.
+10. **Security & Sessions:** Active session metadata (IP address, browser user-agent, login timestamp) and sign out.
+11. **Privacy & Data:** Clear data retention statement, transport encryption disclosure, and password-protected account deletion cascade.
+12. **Mail Connection:** Outbound SMTP configuration status and test connection utility.
+
+---
+
+## 🚢 Render.com Deployment
+The application is ready to deploy directly on **Render.com** with zero extra configuration:
+1. Push this repository to GitHub.
+2. In Render Dashboard, click **New +** -> **Web Service** and choose **Docker**.
+3. Set your remote MySQL database environment variables (`DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` or `DATABASE_URL`).
+4. Render builds the container and executes `database/run_all_migrations.php` automatically on startup!
+5. See [DEPLOY_RENDER.md](DEPLOY_RENDER.md) for full instructions and free MySQL provider setup.
 
 ---
 

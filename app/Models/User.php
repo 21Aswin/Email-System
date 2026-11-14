@@ -11,7 +11,7 @@ class User
     public static function findById(int $id): ?array
     {
         $pdo = Database::getConnection();
-        $stmt = $pdo->prepare("SELECT id, display_name, email, status, created_at FROM users WHERE id = :id LIMIT 1");
+        $stmt = $pdo->prepare("SELECT id, display_name, avatar_path, email, status, created_at FROM users WHERE id = :id LIMIT 1");
         $stmt->execute(['id' => $id]);
         $user = $stmt->fetch();
         return $user ?: null;

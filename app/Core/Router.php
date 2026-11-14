@@ -48,6 +48,9 @@ class Router
     {
         $uri = parse_url($uri, PHP_URL_PATH) ?: '/';
         $method = strtoupper($method);
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
 
         // Check for _method override in POST requests (for PUT/DELETE from forms)
         if ($method === 'POST' && isset($_POST['_method'])) {

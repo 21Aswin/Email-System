@@ -313,15 +313,27 @@ window.togglePasswordVisibility = function(targetId, btn) {
             modal.style.display = 'flex';
             modal.classList.remove('minimized');
 
+            const userSettings = window.CURRENT_USER_SETTINGS || {};
+            const signature = (userSettings.signature || '').trim();
+            const shouldAppend = (userSettings.append_signature !== undefined) ? !!userSettings.append_signature : true;
+
             if (replyData) {
                 document.getElementById('composeTo').value = replyData.to || '';
                 document.getElementById('composeSubject').value = replyData.subject || '';
-                document.getElementById('composeBodyEditor').innerHTML = replyData.body ? `<br><br><blockquote>--- Original Message ---<br>${replyData.body}</blockquote>` : '';
+                let bodyContent = replyData.body ? `<br><br><blockquote>--- Original Message ---<br>${replyData.body}</blockquote>` : '';
+                if (shouldAppend && signature) {
+                    bodyContent = `<br><br>--<br>${this.escapeHtml(signature).replace(/\n/g, '<br>')}` + bodyContent;
+                }
+                document.getElementById('composeBodyEditor').innerHTML = bodyContent;
                 document.getElementById('composeDraftId').value = '';
-                document.getElementById('composeTitle').textContent = 'Reply Message';
+                document.getElementById('composeTitle').textContent = replyData.title || 'Reply Message';
             } else {
                 document.getElementById('composeForm').reset();
-                document.getElementById('composeBodyEditor').innerHTML = '';
+                if (shouldAppend && signature) {
+                    document.getElementById('composeBodyEditor').innerHTML = `<br><br>--<br>${this.escapeHtml(signature).replace(/\n/g, '<br>')}`;
+                } else {
+                    document.getElementById('composeBodyEditor').innerHTML = '';
+                }
                 document.getElementById('composeDraftId').value = '';
                 document.getElementById('composeAttachmentsList').innerHTML = '';
                 this.selectedAttachmentIds = [];
@@ -333,6 +345,10 @@ window.togglePasswordVisibility = function(targetId, btn) {
         },
 
         triggerAutoSave() {
+            const userSettings = window.CURRENT_USER_SETTINGS || {};
+            const autoSave = (userSettings.auto_save_drafts !== undefined) ? !!userSettings.auto_save_drafts : true;
+            if (!autoSave) return;
+
             const statusEl = document.getElementById('draftStatusIndicator');
             statusEl.textContent = 'Saving draft...';
             clearTimeout(this.draftTimeout);
@@ -433,6 +449,19 @@ window.togglePasswordVisibility = function(targetId, btn) {
         },
 
         discardCurrentDraft() {
+            const userSettings = window.CURRENT_USER_SETTINGS || {};
+            const confirmDiscard = (userSettings.confirm_discard !== undefined) ? !!userSettings.confirm_discard : true;
+
+            const to = document.getElementById('composeTo').value.trim();
+            const subject = document.getElementById('composeSubject').value.trim();
+            const body = document.getElementById('composeBodyEditor').innerHTML.trim();
+
+            if (confirmDiscard && (to || subject || (body && !body.startsWith('<br><br>--<br>')))) {
+                if (!confirm('Discard this draft? Any unsaved edits will be lost.')) {
+                    return;
+                }
+            }
+
             const draftId = document.getElementById('composeDraftId').value;
             if (draftId) {
                 this.bulkMove('trash', [draftId]);
@@ -646,10 +675,20 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 .then(res => {
                     if (res.success && res.message) {
                         const m = res.message;
+                        const userSettings = window.CURRENT_USER_SETTINGS || {};
+                        let recipient = m.sender_email;
+                        if (!isForward && userSettings.default_reply_behavior === 'reply_all') {
+                            const recipients = [m.sender_email];
+                            if (m.recipient_email && m.recipient_email !== userSettings.email) {
+                                recipients.push(m.recipient_email);
+                            }
+                            recipient = recipients.join(', ');
+                        }
                         this.openCompose({
-                            to: isForward ? '' : m.sender_email,
+                            to: isForward ? '' : recipient,
                             subject: (isForward ? 'Fwd: ' : 'Re: ') + (m.subject || ''),
-                            body: m.body_html || m.body_text
+                            body: m.body_html || m.body_text,
+                            title: isForward ? 'Forward Message' : (userSettings.default_reply_behavior === 'reply_all' ? 'Reply All' : 'Reply Message')
                         });
                     }
                 });

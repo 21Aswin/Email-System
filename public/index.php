@@ -52,9 +52,21 @@ $router->get('/', function() {
 });
 
 // -------------------------------------------------------------
-// Mailbox Views (Protected with AuthMiddleware)
+// Mailbox & Settings Views (Protected with AuthMiddleware)
 // -------------------------------------------------------------
+$router->get('/settings', [\App\Controllers\SettingsController::class, 'index'], [\App\Middleware\AuthMiddleware::class]);
 $router->get('/mail/{folder}', [\App\Controllers\MailboxController::class, 'index'], [\App\Middleware\AuthMiddleware::class]);
+
+// -------------------------------------------------------------
+// Settings APIs
+// -------------------------------------------------------------
+$router->post('/api/settings/profile', [\App\Controllers\SettingsController::class, 'apiUpdateProfile'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/avatar', [\App\Controllers\SettingsController::class, 'apiUploadAvatar'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/preferences', [\App\Controllers\SettingsController::class, 'apiUpdateSettings'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/password', [\App\Controllers\SettingsController::class, 'apiChangePassword'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/blocked-senders', [\App\Controllers\SettingsController::class, 'apiAddBlockedSender'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/blocked-senders/remove', [\App\Controllers\SettingsController::class, 'apiRemoveBlockedSender'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/settings/delete-account', [\App\Controllers\SettingsController::class, 'apiDeleteAccount'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 
 // -------------------------------------------------------------
 // Asynchronous JSON API Routes
