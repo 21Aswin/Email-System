@@ -18,6 +18,7 @@
             this.bindComposeEvents();
             this.bindSenderHovercard();
             this.updateLiveFolderCounts();
+            this.calendar.init();
         },
 
         bindEvents() {
@@ -499,7 +500,31 @@
                 }
 
                 const msg = data.message;
+                this.currentActiveMessage = msg;
                 const senderInitial = (msg.sender_name || msg.sender_email || 'U').charAt(0).toUpperCase();
+
+                // Smart Interview / Meeting Detection
+                const combinedText = ((msg.subject || '') + ' ' + (msg.body_text || '') + ' ' + (msg.snippet || '')).toLowerCase();
+                const isInterviewMeeting = /interview|meeting|schedule|candidate|discussion|apply for|shortlist|hiring|job/i.test(combinedText);
+
+                let interviewBannerHtml = '';
+                if (isInterviewMeeting) {
+                    interviewBannerHtml = `
+                        <div class="interview-event-banner">
+                            <div class="interview-event-left">
+                                <span class="interview-event-icon">💼</span>
+                                <div>
+                                    <div class="interview-event-title">Interview / Meeting Discussion Detected</div>
+                                    <div class="interview-event-subtitle">Add this candidate / work schedule directly to your Google-style Calendar</div>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-interview-schedule" onclick="window.MailApp.calendar.scheduleFromActiveMessage()">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                <span>Schedule on Calendar</span>
+                            </button>
+                        </div>
+                    `;
+                }
 
                 let attachmentsHtml = '';
                 if (msg.attachments && msg.attachments.length) {
@@ -557,6 +582,8 @@
                             </div>
                         </div>
                     </div>
+
+                    ${interviewBannerHtml}
 
                     <div class="email-reading-body">
                         ${msg.body_html || `<p>${this.escapeHtml(msg.body_text || '')}</p>`}
@@ -1499,10 +1526,14 @@
 
             // Action: Schedule Event
             document.getElementById('hovercardSchedule')?.addEventListener('click', () => {
+                const name = this.activeContactName || 'Candidate';
+                const email = this.activeContactEmail || '';
                 this.hideSenderHovercard();
-                this.openCompose({
-                    to: this.activeContactEmail,
-                    subject: 'Meeting Invitation'
+                this.calendar.open({
+                    title: `Discussion / Interview with ${name}`,
+                    description: `Participant: ${name} <${email}>`,
+                    location: 'Google Meet',
+                    category: 'interview'
                 });
             });
         },
@@ -1520,6 +1551,7 @@
                 email = name.includes('@') ? name : `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`;
             }
 
+            this.activeContactName = name;
             this.activeContactEmail = email;
             this.currentHoverTarget = el;
 
@@ -1572,6 +1604,389 @@
                 card.style.display = 'none';
             }
             this.currentHoverTarget = null;
+        },
+
+        /* ==========================================================
+           Google-Style Calendar & Work Schedule Side Panel
+           ========================================================== */
+        calendar: {
+            isOpen: false,
+            currentYear: new Date().getFullYear(),
+            currentMonth: new Date().getMonth() + 1, // 1 - 12
+            selectedDate: null,
+            eventsCache: [],
+
+            init() {
+                const today = new Date();
+                const y = today.getFullYear();
+                const m = String(today.getMonth() + 1).padStart(2, '0');
+                const d = String(today.getDate()).padStart(2, '0');
+                this.selectedDate = `${y}-${m}-${d}`;
+            },
+
+            toggle() {
+                if (this.isOpen) {
+                    this.close();
+                } else {
+                    this.open();
+                }
+            },
+
+            async open(prefill = null) {
+                this.isOpen = true;
+                const panel = document.getElementById('calendarSidepanel');
+                const railBtn = document.getElementById('railCalendarBtn');
+                const topbarBtn = document.getElementById('topbarCalendarBtn');
+
+                if (panel) panel.style.display = 'flex';
+                if (railBtn) railBtn.classList.add('active');
+                if (topbarBtn) topbarBtn.classList.add('active');
+
+                if (!this.selectedDate) this.init();
+
+                await this.loadMonthEvents();
+
+                if (prefill) {
+                    this.showCreateForm(prefill);
+                }
+            },
+
+            close() {
+                this.isOpen = false;
+                const panel = document.getElementById('calendarSidepanel');
+                const railBtn = document.getElementById('railCalendarBtn');
+                const topbarBtn = document.getElementById('topbarCalendarBtn');
+
+                if (panel) panel.style.display = 'none';
+                if (railBtn) railBtn.classList.remove('active');
+                if (topbarBtn) topbarBtn.classList.remove('active');
+                this.hideCreateForm();
+            },
+
+            async refresh() {
+                await this.loadMonthEvents();
+                window.MailApp.showToast('Calendar updated');
+            },
+
+            prevMonth() {
+                this.currentMonth--;
+                if (this.currentMonth < 1) {
+                    this.currentMonth = 12;
+                    this.currentYear--;
+                }
+                this.loadMonthEvents();
+            },
+
+            nextMonth() {
+                this.currentMonth++;
+                if (this.currentMonth > 12) {
+                    this.currentMonth = 1;
+                    this.currentYear++;
+                }
+                this.loadMonthEvents();
+            },
+
+            async loadMonthEvents() {
+                try {
+                    const res = await fetch(`/api/calendar/events?year=${this.currentYear}&month=${this.currentMonth}`);
+                    const data = await res.json();
+                    if (data.success && data.events) {
+                        this.eventsCache = data.events;
+                        this.renderMiniCalendar();
+                        this.renderAgenda();
+                    }
+                } catch (e) {
+                    console.error("Calendar fetch error:", e);
+                }
+            },
+
+            async loadUpcoming() {
+                try {
+                    const res = await fetch(`/api/calendar/upcoming?limit=40`);
+                    const data = await res.json();
+                    if (data.success && data.events) {
+                        this.eventsCache = data.events;
+                        this.renderAgenda(this.eventsCache, true);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            },
+
+            selectDate(dateStr) {
+                this.selectedDate = dateStr;
+                const dt = new Date(dateStr + 'T00:00:00');
+                const headerDateEl = document.getElementById('calSelectedDateHeader');
+                if (headerDateEl) {
+                    headerDateEl.textContent = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' -';
+                }
+
+                // Update input in create form if open
+                const formDateInput = document.getElementById('calEventDate');
+                if (formDateInput) formDateInput.value = dateStr;
+
+                this.renderMiniCalendar();
+
+                // Filter agenda to selected date or highlight
+                const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
+                if (matchingEvents.length > 0) {
+                    this.renderAgenda(matchingEvents);
+                } else {
+                    this.renderAgenda(this.eventsCache);
+                }
+            },
+
+            renderMiniCalendar() {
+                const titleEl = document.getElementById('calMonthYearTitle');
+                const gridEl = document.getElementById('calDaysGrid');
+                if (!gridEl) return;
+
+                const monthDate = new Date(this.currentYear, this.currentMonth - 1, 1);
+                if (titleEl) {
+                    titleEl.textContent = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                }
+
+                const firstDayIndex = monthDate.getDay(); // 0 is Sun
+                const totalDays = new Date(this.currentYear, this.currentMonth, 0).getDate();
+                const prevMonthDays = new Date(this.currentYear, this.currentMonth - 1, 0).getDate();
+
+                const todayObj = new Date();
+                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
+
+                let html = '';
+
+                // Previous month padding days
+                for (let i = firstDayIndex - 1; i >= 0; i--) {
+                    const dayNum = prevMonthDays - i;
+                    html += `<div class="cal-day-cell other-month">${dayNum}</div>`;
+                }
+
+                // Current month days
+                for (let d = 1; d <= totalDays; d++) {
+                    const dateStr = `${this.currentYear}-${String(this.currentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isToday = (dateStr === todayStr);
+                    const isSelected = (dateStr === this.selectedDate);
+                    const hasEvents = this.eventsCache.some(e => e.event_date === dateStr);
+
+                    let classes = ['cal-day-cell'];
+                    if (isToday) classes.push('today');
+                    if (isSelected) classes.push('selected');
+                    if (hasEvents) classes.push('has-events');
+
+                    html += `<div class="${classes.join(' ')}" onclick="window.MailApp.calendar.selectDate('${dateStr}')">${d}</div>`;
+                }
+
+                // Next month padding days to complete grid
+                const totalCells = firstDayIndex + totalDays;
+                const nextDays = (totalCells % 7 === 0) ? 0 : 7 - (totalCells % 7);
+                for (let n = 1; n <= nextDays; n++) {
+                    html += `<div class="cal-day-cell other-month">${n}</div>`;
+                }
+
+                gridEl.innerHTML = html;
+            },
+
+            renderAgenda(eventsToRender = null, isAll = false) {
+                const listEl = document.getElementById('calAgendaList');
+                if (!listEl) return;
+
+                const events = eventsToRender || this.eventsCache;
+
+                if (!events || !events.length) {
+                    listEl.innerHTML = `
+                        <div style="padding: 24px 0; text-align: center; color: #94a3b8; font-size: 13px;">
+                            No events scheduled.
+                            <div style="margin-top: 8px;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.MailApp.calendar.showCreateForm()">+ Add Work / Interview</button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Group events by date
+                const groups = {};
+                events.forEach(e => {
+                    const dt = e.event_date;
+                    if (!groups[dt]) groups[dt] = [];
+                    groups[dt].push(e);
+                });
+
+                let html = '';
+                Object.keys(groups).sort().forEach(dateStr => {
+                    const dtObj = new Date(dateStr + 'T00:00:00');
+                    const headerText = dtObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+                    html += `<div class="cal-group-date-header">${headerText}</div>`;
+
+                    groups[dateStr].forEach(ev => {
+                        const bg = ev.color || '#15803d';
+                        let timeStr = '';
+                        if (ev.is_all_day == 1) {
+                            timeStr = 'All day';
+                        } else if (ev.start_time) {
+                            const timeParts = ev.start_time.split(':');
+                            const h = parseInt(timeParts[0]);
+                            const m = timeParts[1];
+                            const ampm = h >= 12 ? 'PM' : 'AM';
+                            const h12 = h % 12 || 12;
+                            timeStr = `${h12}:${m} ${ampm}`;
+                        }
+
+                        html += `
+                            <div class="cal-event-pill" style="background-color: ${bg};" title="${window.MailApp.escapeHtml(ev.description || ev.title)}">
+                                <div class="cal-event-pill-content">
+                                    <span>${window.MailApp.escapeHtml(ev.title)}</span>
+                                </div>
+                                ${timeStr ? `<span class="cal-event-pill-time">${timeStr}</span>` : ''}
+                                <button type="button" class="cal-event-del-btn" title="Delete Event" onclick="event.stopPropagation(); window.MailApp.calendar.deleteEvent(${ev.id});">&times;</button>
+                            </div>
+                        `;
+                    });
+                });
+
+                listEl.innerHTML = html;
+            },
+
+            showCreateForm(prefill = null) {
+                const card = document.getElementById('calCreateCard');
+                if (!card) return;
+
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                if (prefill) {
+                    const titleInput = document.getElementById('calEventTitle');
+                    const dateInput = document.getElementById('calEventDate');
+                    const catInput = document.getElementById('calEventCategory');
+                    const descInput = document.getElementById('calEventDesc');
+                    const locInput = document.getElementById('calEventLocation');
+                    const msgIdInput = document.getElementById('calEventMessageId');
+
+                    if (titleInput) titleInput.value = prefill.title || '';
+                    if (dateInput) dateInput.value = prefill.date || this.selectedDate || new Date().toISOString().split('T')[0];
+                    if (catInput) catInput.value = prefill.category || 'interview';
+                    if (descInput) descInput.value = prefill.description || '';
+                    if (locInput) locInput.value = prefill.location || 'Google Meet';
+                    if (msgIdInput) msgIdInput.value = prefill.message_id || '';
+                } else {
+                    document.getElementById('calEventForm')?.reset();
+                    const dateInput = document.getElementById('calEventDate');
+                    if (dateInput) dateInput.value = this.selectedDate || new Date().toISOString().split('T')[0];
+                    const msgIdInput = document.getElementById('calEventMessageId');
+                    if (msgIdInput) msgIdInput.value = '';
+                }
+            },
+
+            hideCreateForm() {
+                const card = document.getElementById('calCreateCard');
+                if (card) card.style.display = 'none';
+            },
+
+            async submitEvent() {
+                const title = document.getElementById('calEventTitle')?.value.trim();
+                const event_date = document.getElementById('calEventDate')?.value;
+                const category = document.getElementById('calEventCategory')?.value || 'interview';
+                const start_time = document.getElementById('calEventStartTime')?.value || null;
+                const end_time = document.getElementById('calEventEndTime')?.value || null;
+                const location = document.getElementById('calEventLocation')?.value.trim() || null;
+                const description = document.getElementById('calEventDesc')?.value.trim() || null;
+                const message_id = document.getElementById('calEventMessageId')?.value || null;
+
+                if (!title || !event_date) return;
+
+                const btnSave = document.getElementById('calSaveEventBtn');
+                if (btnSave) {
+                    btnSave.disabled = true;
+                    btnSave.textContent = 'Scheduling...';
+                }
+
+                try {
+                    const res = await fetch('/api/calendar/events', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': window.MailApp.csrfToken
+                        },
+                        body: JSON.stringify({
+                            title,
+                            event_date,
+                            category,
+                            start_time,
+                            end_time,
+                            location,
+                            description,
+                            message_id,
+                            _csrf_token: window.MailApp.csrfToken
+                        })
+                    });
+
+                    const data = await res.json();
+                    if (data.success) {
+                        window.MailApp.showToast('📅 Scheduled successfully on Calendar!');
+                        this.hideCreateForm();
+                        this.selectedDate = event_date;
+                        await this.loadMonthEvents();
+                    } else {
+                        alert(data.message || 'Error creating event');
+                    }
+                } catch (e) {
+                    alert('Network error while scheduling event');
+                } finally {
+                    if (btnSave) {
+                        btnSave.disabled = false;
+                        btnSave.textContent = 'Save Event';
+                    }
+                }
+            },
+
+            async deleteEvent(id) {
+                if (!confirm('Are you sure you want to delete this event from your calendar?')) return;
+                try {
+                    const res = await fetch('/api/calendar/events/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': window.MailApp.csrfToken
+                        },
+                        body: JSON.stringify({ id, _csrf_token: window.MailApp.csrfToken })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        window.MailApp.showToast('Event removed from calendar');
+                        await this.loadMonthEvents();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            },
+
+            scheduleFromActiveMessage() {
+                const msg = window.MailApp.currentActiveMessage;
+                if (!msg) {
+                    this.open();
+                    return;
+                }
+
+                const today = new Date();
+                let targetDate = new Date();
+                if (today.getHours() >= 15) {
+                    targetDate.setDate(today.getDate() + 1);
+                }
+                const dateStr = targetDate.toISOString().split('T')[0];
+
+                const cleanSubj = (msg.subject || 'Interview Discussion').replace(/^(Re:\s*)+/i, '');
+                const prefill = {
+                    title: `Interview: ${cleanSubj}`,
+                    date: dateStr,
+                    category: 'interview',
+                    location: 'Google Meet',
+                    description: `Candidate: ${msg.sender_name || ''} <${msg.sender_email || ''}>\nNotes: ${msg.snippet || ''}`,
+                    message_id: msg.id || msg.message_id
+                };
+
+                this.open(prefill);
+            }
         },
 
         /* ==========================================================

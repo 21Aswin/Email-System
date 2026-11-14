@@ -88,5 +88,11 @@ $router->post('/api/labels/{id}/delete', [\App\Controllers\LabelController::clas
 $router->post('/api/attachments/upload', [\App\Controllers\AttachmentController::class, 'upload'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->get('/api/attachments/{id}/download', [\App\Controllers\AttachmentController::class, 'download'], [\App\Middleware\AuthMiddleware::class]);
 
+// Calendar & Events API
+$router->get('/api/calendar/events', [\App\Controllers\CalendarController::class, 'apiGetEvents'], [\App\Middleware\AuthMiddleware::class]);
+$router->get('/api/calendar/upcoming', [\App\Controllers\CalendarController::class, 'apiGetUpcoming'], [\App\Middleware\AuthMiddleware::class]);
+$router->post('/api/calendar/events', [\App\Controllers\CalendarController::class, 'apiCreateEvent'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/calendar/events/delete', [\App\Controllers\CalendarController::class, 'apiDeleteEvent'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+
 // Dispatch incoming request
 $router->dispatch($_SERVER['REQUEST_METHOD'] ?? 'GET', $_SERVER['REQUEST_URI'] ?? '/');
