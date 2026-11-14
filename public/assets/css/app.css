@@ -2328,6 +2328,27 @@ button {
    Google Workspace Companion Rail & Calendar Side Panel
    =================================================================== */
 
+.btn-topbar-calendar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    margin-right: 2px;
+}
+
+.btn-topbar-calendar:hover {
+    background: #e8f0fe !important;
+    transform: scale(1.06);
+}
+
+.btn-topbar-calendar.active {
+    background: #dbeafe !important;
+    box-shadow: 0 1px 3px rgba(26, 115, 232, 0.25);
+}
+
 .app-companion-rail {
     width: 56px;
     flex-shrink: 0;

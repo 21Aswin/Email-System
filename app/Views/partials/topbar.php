@@ -40,13 +40,14 @@
     </div>
 
     <div class="topbar-right">
-        <!-- Quick Calendar toggle button -->
-        <button type="button" class="btn-icon" id="topbarCalendarBtn" title="Calendar & Work Schedules" aria-label="Calendar" onclick="window.MailApp.calendar.toggle()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
+        <!-- Calendar toggle button with live date badge matching user's photo -->
+        <button type="button" class="btn-icon btn-topbar-calendar" id="topbarCalendarBtn" title="Google Calendar & Work Schedules" aria-label="Calendar" onclick="window.MailApp.calendar.toggle()">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="4" width="18" height="18" rx="3.5" stroke="#1a73e8" stroke-width="2" fill="#ffffff" />
+                <line x1="8" y1="1.5" x2="8" y2="5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" />
+                <line x1="16" y1="1.5" x2="16" y2="5" stroke="#1a73e8" stroke-width="2" stroke-linecap="round" />
+                <line x1="3" y1="9.5" x2="21" y2="9.5" stroke="#1a73e8" stroke-width="1.8" />
+                <text x="12" y="18.5" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="7.5" font-weight="700" fill="#1a73e8" text-anchor="middle" stroke="none"><?= date('j') ?></text>
             </svg>
         </button>
 

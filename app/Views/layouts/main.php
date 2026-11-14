@@ -34,37 +34,6 @@
 
             <!-- Right Calendar Side Panel -->
             <?php require dirname(__DIR__) . '/partials/calendar_panel.php'; ?>
-
-            <!-- Right Companion Rail -->
-            <aside class="app-companion-rail" id="appCompanionRail" aria-label="Side Panel Tools">
-                <button type="button" class="companion-icon-btn" id="railCalendarBtn" title="Calendar & Schedules" onclick="window.MailApp.calendar.toggle()">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="16" y1="2" x2="16" y2="6"></line>
-                        <line x1="8" y1="2" x2="8" y2="6"></line>
-                        <line x1="3" y1="10" x2="21" y2="10"></line>
-                        <text x="12" y="18" font-size="7" font-weight="bold" fill="#2563eb" text-anchor="middle" stroke="none"><?= date('j') ?></text>
-                    </svg>
-                </button>
-                <button type="button" class="companion-icon-btn" title="Keep Notes" onclick="window.MailApp.showToast('Google Keep Notes integration active')">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2">
-                        <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path>
-                        <line x1="10" y1="22" x2="14" y2="22"></line>
-                    </svg>
-                </button>
-                <button type="button" class="companion-icon-btn" title="Tasks" onclick="window.MailApp.showToast('Tasks integration active')">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="16 10 11 15 8 12"></polyline>
-                    </svg>
-                </button>
-                <button type="button" class="companion-icon-btn" title="Contacts" onclick="window.MailApp.showToast('Contacts integration active')">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                </button>
-            </aside>
         </div>
     </div>
 
