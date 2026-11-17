@@ -51,8 +51,8 @@
         <!-- Agenda / Schedule List -->
         <div class="cal-agenda-section">
             <div class="cal-agenda-header">
-                <span class="cal-agenda-title">Agenda & Upcoming Work</span>
-                <button type="button" class="cal-view-all-btn" onclick="window.MailApp.calendar.loadUpcoming()">Show All</button>
+                <span class="cal-agenda-title" id="calAgendaTitle">Agenda & Upcoming Work</span>
+                <button type="button" class="cal-view-all-btn" id="calShowAllBtn" onclick="window.MailApp.calendar.showAllEvents()">Show All</button>
             </div>
 
             <div class="cal-agenda-list" id="calAgendaList">
@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <!-- Inline Event Creation Form (Toggled by '+ Create an event') -->
+        <!-- Inline Event Creation Form (Toggled by '+ Create an event' or clicking an event to edit) -->
         <div class="cal-create-card" id="calCreateCard" style="display: none;">
             <div class="cal-create-header">
                 <h4 id="calCreateFormTitle">Schedule New Event</h4>
@@ -69,6 +69,7 @@
             </div>
             
             <form id="calEventForm" onsubmit="event.preventDefault(); window.MailApp.calendar.submitEvent();">
+                <input type="hidden" id="calEventEditId" value="">
                 <input type="hidden" id="calEventMessageId" value="">
 
                 <div class="cal-form-group">

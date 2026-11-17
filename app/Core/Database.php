@@ -55,10 +55,19 @@ class Database
      */
     public static function getRootConnection(): PDO
     {
-        $host = Env::get('DB_HOST', 'localhost');
-        $port = Env::get('DB_PORT', '3306');
-        $user = Env::get('DB_USERNAME', 'root');
-        $pass = Env::get('DB_PASSWORD', '');
+        $dbUrl = Env::get('DATABASE_URL');
+        if (!empty($dbUrl) && (str_starts_with($dbUrl, 'mysql://') || str_starts_with($dbUrl, 'mariadb://'))) {
+            $parsed = parse_url($dbUrl);
+            $host = $parsed['host'] ?? 'localhost';
+            $port = (string)($parsed['port'] ?? '3306');
+            $user = $parsed['user'] ?? 'root';
+            $pass = $parsed['pass'] ?? '';
+        } else {
+            $host = Env::get('DB_HOST', 'localhost');
+            $port = Env::get('DB_PORT', '3306');
+            $user = Env::get('DB_USERNAME', 'root');
+            $pass = Env::get('DB_PASSWORD', '');
+        }
 
         $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
         $options = [

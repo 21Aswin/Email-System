@@ -53,28 +53,42 @@
         };
     }
 
-    // Tab Navigation
-    function initTabs() {
+    // Tab Navigation & Quick Pill Switcher
+    function switchToTab(targetId) {
+        if (!targetId) return;
         const navBtns = document.querySelectorAll('.settings-nav-btn');
         const panels = document.querySelectorAll('.settings-panel');
+        const targetBtn = document.querySelector(`.settings-nav-btn[data-target="${targetId}"]`);
+        const targetPanel = document.getElementById(targetId);
+
+        if (targetBtn && targetPanel) {
+            navBtns.forEach(b => b.classList.remove('active'));
+            panels.forEach(p => p.classList.remove('active'));
+
+            targetBtn.classList.add('active');
+            targetPanel.classList.add('active');
+
+            if (window.innerWidth <= 768) {
+                targetPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    }
+
+    function initTabs() {
+        const navBtns = document.querySelectorAll('.settings-nav-btn');
 
         navBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 const targetId = btn.getAttribute('data-target');
-                if (!targetId) return;
+                switchToTab(targetId);
+            });
+        });
 
-                navBtns.forEach(b => b.classList.remove('active'));
-                panels.forEach(p => p.classList.remove('active'));
-
-                btn.classList.add('active');
-                const targetPanel = document.getElementById(targetId);
-                if (targetPanel) {
-                    targetPanel.classList.add('active');
-                    // Smooth scroll target panel into view on mobile
-                    if (window.innerWidth <= 768) {
-                        targetPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }
+        document.querySelectorAll('.quick-pill').forEach(pill => {
+            pill.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = pill.getAttribute('data-target');
+                switchToTab(targetId);
             });
         });
     }
@@ -680,7 +694,7 @@
 
         const saveBtn = document.getElementById('btnSaveSettings');
         if (saveBtn) {
-            saveBtn.addEventListener('click', savePreferences);
+            saveBtn.addEventListener('click', saveAllGeneral);
         }
 
         const discardBtn = document.getElementById('btnDiscardSettings');
@@ -689,12 +703,274 @@
         }
     }
 
+    // Bidirectional Synchronization between General overview and dedicated tab fields
+    function syncAllFromGeneral() {
+        const genDisplayName = document.getElementById('genSettingDisplayName');
+        const mainDisplayName = document.getElementById('settingDisplayName');
+        if (genDisplayName && mainDisplayName) {
+            mainDisplayName.value = genDisplayName.value;
+        }
+
+        const genTheme = document.getElementById('genSettingThemeSelect');
+        const mainTheme = document.getElementById('settingThemeSelect');
+        if (genTheme && mainTheme) {
+            mainTheme.value = genTheme.value;
+            const themeRadio = document.querySelector(`input[name="setting_theme"][value="${genTheme.value}"]`);
+            if (themeRadio) themeRadio.checked = true;
+        }
+
+        const genDensity = document.getElementById('genSettingDensitySelect');
+        const mainDensity = document.getElementById('settingDensitySelect');
+        if (genDensity && mainDensity) {
+            mainDensity.value = genDensity.value;
+            const densityRadio = document.querySelector(`input[name="setting_density"][value="${genDensity.value}"]`);
+            if (densityRadio) densityRadio.checked = true;
+        }
+
+        const syncFields = [
+            ['genSettingDefaultFolder', 'settingDefaultFolder'],
+            ['genSettingDefaultCategory', 'settingDefaultCategory'],
+            ['genSettingUnreadBadgeMode', 'settingUnreadBadgeMode'],
+            ['genSettingSignatureText', 'settingSignatureText'],
+            ['genSettingReplyBehaviorSelect', 'settingReplyBehaviorSelect']
+        ];
+        syncFields.forEach(([genId, mainId]) => {
+            const genEl = document.getElementById(genId);
+            const mainEl = document.getElementById(mainId);
+            if (genEl && mainEl) {
+                mainEl.value = genEl.value;
+            }
+        });
+
+        const syncChecks = [
+            ['genSettingShowCategoryTabs', 'settingShowCategoryTabs'],
+            ['genSettingAppendSignature', 'settingAppendSignature'],
+            ['genSettingConfirmDiscard', 'settingConfirmDiscard'],
+            ['genSettingAutoSaveDrafts', 'settingAutoSaveDrafts'],
+            ['genSettingInAppNotifications', 'settingInAppNotifications']
+        ];
+        syncChecks.forEach(([genId, mainId]) => {
+            const genEl = document.getElementById(genId);
+            const mainEl = document.getElementById(mainId);
+            if (genEl && mainEl) {
+                mainEl.checked = genEl.checked;
+            }
+        });
+    }
+
+    function attachGeneralSyncListeners() {
+        const textPairs = [
+            ['genSettingDisplayName', 'settingDisplayName'],
+            ['genSettingDefaultFolder', 'settingDefaultFolder'],
+            ['genSettingDefaultCategory', 'settingDefaultCategory'],
+            ['genSettingUnreadBadgeMode', 'settingUnreadBadgeMode'],
+            ['genSettingSignatureText', 'settingSignatureText'],
+            ['genSettingReplyBehaviorSelect', 'settingReplyBehaviorSelect']
+        ];
+        textPairs.forEach(([genId, mainId]) => {
+            const genEl = document.getElementById(genId);
+            const mainEl = document.getElementById(mainId);
+            if (genEl && mainEl) {
+                genEl.addEventListener('input', () => { mainEl.value = genEl.value; markDirty(); });
+                mainEl.addEventListener('input', () => { genEl.value = mainEl.value; markDirty(); });
+            }
+        });
+
+        const checkPairs = [
+            ['genSettingShowCategoryTabs', 'settingShowCategoryTabs'],
+            ['genSettingAppendSignature', 'settingAppendSignature'],
+            ['genSettingConfirmDiscard', 'settingConfirmDiscard'],
+            ['genSettingAutoSaveDrafts', 'settingAutoSaveDrafts'],
+            ['genSettingInAppNotifications', 'settingInAppNotifications']
+        ];
+        checkPairs.forEach(([genId, mainId]) => {
+            const genEl = document.getElementById(genId);
+            const mainEl = document.getElementById(mainId);
+            if (genEl && mainEl) {
+                genEl.addEventListener('change', () => { mainEl.checked = genEl.checked; markDirty(); });
+                mainEl.addEventListener('change', () => { genEl.checked = mainEl.checked; markDirty(); });
+            }
+        });
+
+        const genTheme = document.getElementById('genSettingThemeSelect');
+        const mainTheme = document.getElementById('settingThemeSelect');
+        if (genTheme && mainTheme) {
+            genTheme.addEventListener('change', () => {
+                mainTheme.value = genTheme.value;
+                previewTheme(genTheme.value);
+            });
+            mainTheme.addEventListener('change', () => {
+                genTheme.value = mainTheme.value;
+                previewTheme(mainTheme.value);
+            });
+        }
+
+        const genDensity = document.getElementById('genSettingDensitySelect');
+        const mainDensity = document.getElementById('settingDensitySelect');
+        if (genDensity && mainDensity) {
+            genDensity.addEventListener('change', () => {
+                mainDensity.value = genDensity.value;
+                previewDensity(genDensity.value);
+            });
+            mainDensity.addEventListener('change', () => {
+                genDensity.value = mainDensity.value;
+                previewDensity(mainDensity.value);
+            });
+        }
+    }
+
+    async function saveAllGeneral() {
+        syncAllFromGeneral();
+        const genDisplayName = document.getElementById('genSettingDisplayName');
+        if (genDisplayName && genDisplayName.value.trim()) {
+            await updateProfile();
+        }
+        await savePreferences();
+    }
+
+    /**
+     * Initializes custom in-page select dropdowns for all select elements in Settings.
+     * This replaces native browser select popups with responsive, strictly bounded in-page dropdowns
+     * that align 100% with their input fields and never overflow the mobile viewport.
+     */
+    function initCustomSelects() {
+        const selects = document.querySelectorAll('.settings-page select.form-select, .settings-page select');
+        selects.forEach(select => {
+            if (select.dataset.customized === 'true') return;
+            select.dataset.customized = 'true';
+
+            // Create container
+            const container = document.createElement('div');
+            container.className = 'custom-select-container';
+
+            // Insert container before select and wrap it
+            select.parentNode.insertBefore(container, select);
+            container.appendChild(select);
+
+            // Hide native select visually while keeping it fully functional in DOM
+            select.style.setProperty('display', 'none', 'important');
+
+            // Find current option label
+            const currentOption = select.options[select.selectedIndex] || select.options[0];
+            const currentText = currentOption ? currentOption.textContent.trim() : '';
+
+            // Create Trigger button
+            const trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.className = 'custom-select-trigger';
+            trigger.setAttribute('aria-haspopup', 'listbox');
+            trigger.setAttribute('aria-expanded', 'false');
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'custom-select-label';
+            labelSpan.textContent = currentText;
+
+            const arrowSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            arrowSvg.setAttribute('class', 'custom-select-arrow');
+            arrowSvg.setAttribute('width', '16');
+            arrowSvg.setAttribute('height', '16');
+            arrowSvg.setAttribute('viewBox', '0 0 24 24');
+            arrowSvg.setAttribute('fill', 'currentColor');
+            const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            arrowPath.setAttribute('d', 'M7 10l5 5 5-5z');
+            arrowSvg.appendChild(arrowPath);
+
+            trigger.appendChild(labelSpan);
+            trigger.appendChild(arrowSvg);
+            container.appendChild(trigger);
+
+            // Create Dropdown list
+            const dropdown = document.createElement('div');
+            dropdown.className = 'custom-select-dropdown';
+            dropdown.setAttribute('role', 'listbox');
+
+            function buildOptions() {
+                dropdown.innerHTML = '';
+                Array.from(select.options).forEach(opt => {
+                    const optDiv = document.createElement('div');
+                    optDiv.className = 'custom-select-option' + (opt.value === select.value ? ' selected' : '');
+                    optDiv.dataset.value = opt.value;
+                    optDiv.textContent = opt.textContent.trim();
+
+                    optDiv.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        select.value = opt.value;
+                        labelSpan.textContent = opt.textContent.trim();
+
+                        dropdown.querySelectorAll('.custom-select-option').forEach(o => o.classList.remove('selected'));
+                        optDiv.classList.add('selected');
+
+                        closeDropdown();
+
+                        // Fire native change event so all handlers (theme preview, density preview, dirty state, tab sync) execute
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+
+                    dropdown.appendChild(optDiv);
+                });
+            }
+
+            buildOptions();
+            container.appendChild(dropdown);
+
+            function toggleDropdown(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const isOpen = dropdown.classList.contains('show');
+                closeAllCustomDropdowns();
+                if (!isOpen) {
+                    container.classList.add('open');
+                    dropdown.classList.add('show');
+                    trigger.setAttribute('aria-expanded', 'true');
+                }
+            }
+
+            function closeDropdown() {
+                container.classList.remove('open');
+                dropdown.classList.remove('show');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+
+            trigger.addEventListener('click', toggleDropdown);
+
+            // Update custom dropdown when select value changes programmatically
+            select.addEventListener('change', () => {
+                const opt = select.options[select.selectedIndex];
+                if (opt) {
+                    labelSpan.textContent = opt.textContent.trim();
+                    dropdown.querySelectorAll('.custom-select-option').forEach(o => {
+                        if (o.dataset.value === select.value) {
+                            o.classList.add('selected');
+                        } else {
+                            o.classList.remove('selected');
+                        }
+                    });
+                }
+            });
+        });
+    }
+
+    function closeAllCustomDropdowns() {
+        document.querySelectorAll('.custom-select-container.open').forEach(c => c.classList.remove('open'));
+        document.querySelectorAll('.custom-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        document.querySelectorAll('.custom-select-trigger[aria-expanded="true"]').forEach(t => t.setAttribute('aria-expanded', 'false'));
+    }
+
+    // Close when tapping outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-select-container')) {
+            closeAllCustomDropdowns();
+        }
+    });
+
     // Initialize when DOM is ready
     document.addEventListener('DOMContentLoaded', () => {
         initSettingsState();
         initTabs();
         attachDirtyListeners();
+        attachGeneralSyncListeners();
         updateCharCount();
+        initCustomSelects();
     });
 
     // Public API
@@ -714,7 +990,10 @@
         closeDeleteAccountModal,
         confirmDeleteAccount,
         handleBrowserNotificationToggle,
-        testBrowserNotification
+        testBrowserNotification,
+        switchToTab,
+        saveAllGeneral,
+        initCustomSelects
     };
 
 })();

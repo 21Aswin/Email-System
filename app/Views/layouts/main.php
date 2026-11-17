@@ -20,7 +20,7 @@ $activeDensity = $layoutSettings['density'] ?? 'comfortable';
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- App Styles -->
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/app.css?v=<?= time() ?>">
 </head>
 <body class="nkinfyx-app" data-theme="<?= \App\Core\View::e($activeTheme) ?>" data-density="<?= \App\Core\View::e($activeDensity) ?>">
     <!-- Sidebar Backdrop Overlay for Mobile -->

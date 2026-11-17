@@ -27,9 +27,6 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                 </span>
                 <span class="nav-label">Starred</span>
-                <span class="nav-badge badge-neutral" id="badge-starred" <?= empty($counts['starred']['total']) ? 'style="display:none;"' : '' ?>>
-                    <?= (int)($counts['starred']['total'] ?? 0) ?>
-                </span>
             </a>
 
             <!-- 3. Snoozed -->
@@ -38,9 +35,6 @@
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                 </span>
                 <span class="nav-label">Snoozed</span>
-                <span class="nav-badge badge-neutral" id="badge-snoozed" <?= empty($counts['snoozed']['total']) ? 'style="display:none;"' : '' ?>>
-                    <?= (int)($counts['snoozed']['total'] ?? 0) ?>
-                </span>
             </a>
 
             <!-- 4. Sent -->
@@ -105,8 +99,8 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3H7c-1.1 0-1.99.9-1.99 2L5 21l7-3 7 3V5c0-1.1-.9-2-2-2zm0 15l-5-2.18L7 18V5h10v13z"/></svg>
                     </span>
                     <span class="nav-label">Important</span>
-                    <span class="nav-badge badge-neutral" id="badge-important" <?= empty($counts['important']['total']) ? 'style="display:none;"' : '' ?>>
-                        <?= (int)($counts['important']['total'] ?? 0) ?>
+                    <span class="nav-badge" id="badge-important" <?= empty($counts['important']['unread']) ? 'style="display:none;"' : '' ?>>
+                        <?= (int)($counts['important']['unread'] ?? 0) ?>
                     </span>
                 </a>
 
@@ -116,9 +110,6 @@
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2zm-7 5h5v5h-5z"/></svg>
                     </span>
                     <span class="nav-label">Scheduled</span>
-                    <span class="nav-badge badge-neutral" id="badge-scheduled" <?= empty($counts['scheduled']['total']) ? 'style="display:none;"' : '' ?>>
-                        <?= (int)($counts['scheduled']['total'] ?? 0) ?>
-                    </span>
                 </a>
 
                 <!-- All Mail (Archive) -->

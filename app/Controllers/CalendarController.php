@@ -136,4 +136,39 @@ class CalendarController
             Response::error('Event not found or unauthorized.', 404);
         }
     }
+
+    /**
+     * Update an existing event
+     */
+    public function apiUpdateEvent(): void
+    {
+        $userId = (int)AuthService::id();
+        $data = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $id = (int)($data['id'] ?? 0);
+
+        if ($id <= 0) {
+            Response::error('Invalid event ID.', 400);
+            return;
+        }
+
+        if (empty($data['title'])) {
+            Response::error('Event title is required.', 400);
+            return;
+        }
+
+        if (empty($data['event_date'])) {
+            Response::error('Event date is required.', 400);
+            return;
+        }
+
+        $updated = CalendarEvent::update($id, $userId, $data);
+        if ($updated) {
+            $event = CalendarEvent::getById($id, $userId);
+            Response::success('Event updated successfully.', [
+                'event' => $event
+            ]);
+        } else {
+            Response::error('Failed to update event or unauthorized.', 400);
+        }
+    }
 }

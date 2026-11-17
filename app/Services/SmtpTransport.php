@@ -48,7 +48,14 @@ class SmtpTransport
         }
 
         $remoteSocket = ($this->encryption === 'ssl' ? 'ssl://' : '') . $this->host . ':' . $this->port;
-        $socket = @stream_socket_client($remoteSocket, $errno, $errstr, $this->timeout, STREAM_CLIENT_CONNECT);
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        $socket = @stream_socket_client($remoteSocket, $errno, $errstr, $this->timeout, STREAM_CLIENT_CONNECT, $context);
 
         if (!$socket) {
             throw new Exception("Could not connect to SMTP host: {$errstr} ({$errno})");
@@ -64,7 +71,8 @@ class SmtpTransport
         // STARTTLS if TLS
         if ($this->encryption === 'tls') {
             $this->sendCommand($socket, "STARTTLS", 220);
-            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $cryptoMethod = STREAM_CRYPTO_METHOD_TLS_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT | STREAM_CRYPTO_METHOD_TLSv1_3_CLIENT;
+            if (!stream_socket_enable_crypto($socket, true, $cryptoMethod)) {
                 fclose($socket);
                 throw new Exception("Failed to establish TLS encryption with SMTP server.");
             }

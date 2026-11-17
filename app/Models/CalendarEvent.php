@@ -202,6 +202,56 @@ class CalendarEvent
     }
 
     /**
+     * Update an existing event owned by user
+     */
+    public static function update(int $id, int $userId, array $data): bool
+    {
+        $pdo = Database::getConnection();
+        $colors = [
+            'interview' => '#d97706',
+            'work'      => '#2563eb',
+            'meeting'   => '#9333ea',
+            'holiday'   => '#15803d',
+            'personal'  => '#ea580c',
+        ];
+
+        $cat = strtolower((string)($data['category'] ?? 'interview'));
+        if (!array_key_exists($cat, $colors)) {
+            $cat = 'interview';
+        }
+        $color = $data['color'] ?? $colors[$cat];
+
+        $stmt = $pdo->prepare("
+            UPDATE calendar_events
+            SET title = :title,
+                description = :desc,
+                location = :loc,
+                event_date = :dt,
+                start_time = :start,
+                end_time = :end,
+                is_all_day = :all_day,
+                category = :cat,
+                color = :col,
+                updated_at = NOW()
+            WHERE id = :id AND user_id = :uid
+        ");
+
+        return $stmt->execute([
+            'id'       => $id,
+            'uid'      => $userId,
+            'title'    => trim((string)$data['title']),
+            'desc'     => !empty($data['description']) ? trim((string)$data['description']) : null,
+            'loc'      => !empty($data['location']) ? trim((string)$data['location']) : null,
+            'dt'       => $data['event_date'],
+            'start'    => !empty($data['start_time']) ? $data['start_time'] : null,
+            'end'      => !empty($data['end_time']) ? $data['end_time'] : null,
+            'all_day'  => !empty($data['is_all_day']) ? 1 : 0,
+            'cat'      => $cat,
+            'col'      => $color,
+        ]);
+    }
+
+    /**
      * Get single event by id
      */
     public static function getById(int $id, int $userId): ?array

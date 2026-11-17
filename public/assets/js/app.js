@@ -185,23 +185,23 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 });
             }
 
-            // Periodic auto-check for incoming replies every 45 seconds
+            // Periodic auto-check for incoming replies every 45 seconds (only when on mail view)
             setInterval(() => {
-                if (document.visibilityState === 'visible') {
+                if (document.visibilityState === 'visible' && window.location.pathname.startsWith('/mail')) {
                     this.syncInbox(false);
                 }
             }, 45000);
 
-            // Periodic auto-check for snooze expiries and live folder counts every 12 seconds
+            // Periodic auto-check for snooze expiries and live folder counts every 30 seconds (only when on mail view)
             setInterval(() => {
-                if (document.visibilityState === 'visible') {
+                if (document.visibilityState === 'visible' && window.location.pathname.startsWith('/mail')) {
                     this.pollSnoozeAndCounts();
                 }
-            }, 12000);
+            }, 30000);
 
-            // Instant snooze/counts refresh when user switches back to this browser tab
+            // Instant snooze/counts refresh when user switches back to this browser tab (only when on mail view)
             document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
+                if (document.visibilityState === 'visible' && window.location.pathname.startsWith('/mail')) {
                     this.pollSnoozeAndCounts();
                 }
             });
@@ -435,8 +435,14 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     })
                 });
 
-                const data = await res.json();
-                if (data.success) {
+                let data;
+                try {
+                    data = await res.json();
+                } catch (e) {
+                    data = null;
+                }
+
+                if (data && data.success) {
                     this.showToast(data.notice || 'Message sent successfully.');
                     document.getElementById('composeModal').style.display = 'none';
                     document.getElementById('composeForm').reset();
@@ -445,10 +451,12 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     this.fetchMessages();
                     this.updateLiveFolderCounts();
                 } else {
-                    this.showToast(data.message || 'Error sending message', 'error');
+                    const errMsg = (data && (data.message || data.error)) || `Server error (${res.status})`;
+                    this.showToast(errMsg, 'error');
                 }
             } catch (err) {
-                this.showToast('Network error while sending', 'error');
+                console.error("Mail send exception:", err);
+                this.showToast(err.message || 'Network error while sending', 'error');
             } finally {
                 btnSend.disabled = false;
                 btnSend.innerHTML = `<span>Send</span><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`;
@@ -654,13 +662,25 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     </div>
                 `;
 
-                // Update row in list to read state
+                // Update row in list to read state & decrement sidebar unread count immediately
                 const row = document.querySelector(`.message-row[data-message-id="${messageId}"]`);
                 if (row) {
+                    const wasUnread = row.classList.contains('unread');
                     row.classList.remove('unread');
                     row.classList.add('read');
+                    if (wasUnread) {
+                        const inboxBadge = document.getElementById('badge-inbox');
+                        if (inboxBadge) {
+                            let curCount = parseInt(inboxBadge.textContent || '0', 10);
+                            curCount = Math.max(0, curCount - 1);
+                            inboxBadge.textContent = curCount;
+                            if (curCount === 0) {
+                                inboxBadge.style.display = 'none';
+                            }
+                        }
+                    }
                 }
-                this.updateLiveFolderCounts();
+                await this.updateLiveFolderCounts();
             } catch (err) {
                 container.innerHTML = '<div style="padding:40px; color:red;">Network error loading email.</div>';
             }
@@ -964,12 +984,9 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 if (data.success && data.counts) {
                     const c = data.counts;
                     this.setBadge('badge-inbox', c.inbox?.unread);
-                    this.setBadge('badge-starred', c.starred?.total);
-                    this.setBadge('badge-snoozed', c.snoozed?.total);
                     this.setBadge('badge-drafts', c.drafts?.total);
                     this.setBadge('badge-purchases', c.purchases?.unread);
-                    this.setBadge('badge-important', c.important?.total);
-                    this.setBadge('badge-scheduled', c.scheduled?.total);
+                    this.setBadge('badge-important', c.important?.unread);
                     this.setBadge('badge-spam', c.spam?.unread);
                 }
             } catch (err) {
@@ -1502,12 +1519,9 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     const newSnoozedTotal = data.counts.snoozed?.total || 0;
 
                     this.setBadge('badge-inbox', data.counts.inbox?.unread);
-                    this.setBadge('badge-starred', data.counts.starred?.total);
-                    this.setBadge('badge-snoozed', data.counts.snoozed?.total);
                     this.setBadge('badge-drafts', data.counts.drafts?.total);
                     this.setBadge('badge-purchases', data.counts.purchases?.unread);
-                    this.setBadge('badge-important', data.counts.important?.total);
-                    this.setBadge('badge-scheduled', data.counts.scheduled?.total);
+                    this.setBadge('badge-important', data.counts.important?.unread);
                     this.setBadge('badge-spam', data.counts.spam?.unread);
 
                     // If any snoozed messages expired and woke up to inbox
@@ -1817,61 +1831,96 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 this.loadMonthEvents();
             },
 
-            async loadMonthEvents() {
+            async loadMonthEvents(defaultToDate = true) {
                 try {
                     const res = await fetch(`/api/calendar/events?year=${this.currentYear}&month=${this.currentMonth}`);
                     const data = await res.json();
                     if (data.success && data.events) {
                         this.eventsCache = data.events;
                         this.renderMiniCalendar();
-                        const agendaList = (data.upcoming && data.upcoming.length) ? data.upcoming : this.eventsCache;
-                        this.renderAgenda(agendaList);
+
+                        if (defaultToDate && this.selectedDate) {
+                            // Default view: Show specifically today's / selected date's schedule!
+                            this.renderDateSchedule(this.selectedDate);
+                        } else {
+                            const agendaList = (data.upcoming && data.upcoming.length) ? data.upcoming : this.eventsCache;
+                            this.renderAgenda(agendaList, true);
+                        }
                     }
                 } catch (e) {
                     console.error("Calendar fetch error:", e);
                 }
             },
 
-            async loadUpcoming() {
-                try {
-                    const res = await fetch(`/api/calendar/upcoming?limit=40`);
-                    const data = await res.json();
-                    if (data.success && data.events) {
-                        this.eventsCache = data.events;
-                        this.renderAgenda(this.eventsCache, true);
-                    }
-                } catch (e) {
-                    console.error(e);
-                }
-            },
-
-            async selectDate(dateStr) {
-                this.selectedDate = dateStr;
+            renderDateSchedule(dateStr) {
+                const todayObj = new Date();
+                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
                 const dt = new Date(dateStr + 'T00:00:00');
+                const isToday = (dateStr === todayStr);
+
                 const headerDateEl = document.getElementById('calSelectedDateHeader');
                 if (headerDateEl) {
-                    headerDateEl.textContent = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' -';
+                    headerDateEl.textContent = (isToday ? 'Today, ' : '') + dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ' -';
                 }
 
-                // Update input in create form if open
-                const formDateInput = document.getElementById('calEventDate');
-                if (formDateInput) formDateInput.value = dateStr;
+                const titleEl = document.getElementById('calAgendaTitle');
+                if (titleEl) {
+                    titleEl.textContent = isToday ? "Today's Schedule" : ('Schedule for ' + dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                }
+
+                const btnShowAll = document.getElementById('calShowAllBtn');
+                if (btnShowAll) {
+                    btnShowAll.style.background = '';
+                    btnShowAll.style.color = '';
+                    btnShowAll.textContent = 'Show All';
+                }
+
+                // Filter events strictly for this date
+                const dayEvents = (this.eventsCache || []).filter(e => e.event_date === dateStr);
+                this.renderAgenda(dayEvents, false, dateStr);
+            },
+
+            async loadUpcoming() {
+                await this.showAllEvents();
+            },
+
+            async showAllEvents() {
+                this.selectedDate = null;
+                const headerDateEl = document.getElementById('calSelectedDateHeader');
+                if (headerDateEl) headerDateEl.textContent = 'All Upcoming -';
+
+                const titleEl = document.getElementById('calAgendaTitle');
+                if (titleEl) titleEl.textContent = 'All Upcoming Events & Agenda';
+
+                const btnShowAll = document.getElementById('calShowAllBtn');
+                if (btnShowAll) {
+                    btnShowAll.style.background = '#1a73e8';
+                    btnShowAll.style.color = '#ffffff';
+                    btnShowAll.textContent = 'Showing All';
+                }
 
                 this.renderMiniCalendar();
 
                 try {
-                    const res = await fetch(`/api/calendar/upcoming?limit=40&from=${dateStr}`);
+                    const res = await fetch(`/api/calendar/upcoming?limit=100`);
                     const data = await res.json();
-                    if (data.success && data.events && data.events.length) {
-                        this.renderAgenda(data.events);
-                    } else {
-                        const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
-                        this.renderAgenda(matchingEvents.length > 0 ? matchingEvents : this.eventsCache);
+                    if (data.success && data.events) {
+                        this.eventsCache = data.events;
+                        this.renderAgenda(this.eventsCache, true);
+                        window.MailApp.showToast(`📅 Showing all ${data.events.length} upcoming events`);
                     }
                 } catch (e) {
-                    const matchingEvents = this.eventsCache.filter(e => e.event_date === dateStr);
-                    this.renderAgenda(matchingEvents.length > 0 ? matchingEvents : this.eventsCache);
+                    console.error("Show all error:", e);
                 }
+            },
+
+            selectDate(dateStr) {
+                this.selectedDate = dateStr;
+                const formDateInput = document.getElementById('calEventDate');
+                if (formDateInput) formDateInput.value = dateStr;
+
+                this.renderMiniCalendar();
+                this.renderDateSchedule(dateStr);
             },
 
             renderMiniCalendar() {
@@ -1924,18 +1973,27 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 gridEl.innerHTML = html;
             },
 
-            renderAgenda(eventsToRender = null, isAll = false) {
+            renderAgenda(eventsToRender = null, isAll = false, specificDate = null) {
                 const listEl = document.getElementById('calAgendaList');
                 if (!listEl) return;
 
                 const events = eventsToRender || this.eventsCache;
+                const todayObj = new Date();
+                const todayStr = `${todayObj.getFullYear()}-${String(todayObj.getMonth() + 1).padStart(2, '0')}-${String(todayObj.getDate()).padStart(2, '0')}`;
 
                 if (!events || !events.length) {
+                    const isForToday = (specificDate === todayStr);
+                    const emptyMsg = isForToday 
+                        ? 'No schedule for today. You are all caught up!' 
+                        : (specificDate ? `No schedule for ${specificDate}.` : 'No upcoming events scheduled.');
+
                     listEl.innerHTML = `
-                        <div style="padding: 24px 0; text-align: center; color: #94a3b8; font-size: 13px;">
-                            No events scheduled.
-                            <div style="margin-top: 8px;">
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.MailApp.calendar.showCreateForm()">+ Add Work / Interview</button>
+                        <div style="padding: 24px 8px; text-align: center; color: #94a3b8; font-size: 13px;">
+                            <div style="font-size: 26px; margin-bottom: 6px;">🏖️</div>
+                            <div style="font-weight: 500; color: #64748b; margin-bottom: 12px;">${emptyMsg}</div>
+                            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="window.MailApp.calendar.showCreateForm({date: '${specificDate || todayStr}'})">+ Schedule on this date</button>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="window.MailApp.calendar.showAllEvents()">View All Upcoming</button>
                             </div>
                         </div>
                     `;
@@ -1972,12 +2030,15 @@ window.togglePasswordVisibility = function(targetId, btn) {
                         }
 
                         html += `
-                            <div class="cal-event-pill" style="background-color: ${bg};" title="${window.MailApp.escapeHtml(ev.description || ev.title)}">
+                            <div class="cal-event-pill" style="background-color: ${bg}; cursor: pointer; transition: transform 0.15s ease;" title="Click to edit event: ${window.MailApp.escapeHtml(ev.description || ev.title)}" onclick="window.MailApp.calendar.editEvent(${ev.id})">
                                 <div class="cal-event-pill-content">
-                                    <span>${window.MailApp.escapeHtml(ev.title)}</span>
+                                    <span style="font-weight: 600;">${window.MailApp.escapeHtml(ev.title)}</span>
                                 </div>
                                 ${timeStr ? `<span class="cal-event-pill-time">${timeStr}</span>` : ''}
-                                <button type="button" class="cal-event-del-btn" title="Delete Event" onclick="event.stopPropagation(); window.MailApp.calendar.deleteEvent(${ev.id});">&times;</button>
+                                <div class="cal-event-actions" style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px;" onclick="event.stopPropagation();">
+                                    <button type="button" class="cal-event-edit-btn" title="Edit Event" onclick="window.MailApp.calendar.editEvent(${ev.id});" style="background: rgba(255,255,255,0.2); border: none; color: #fff; cursor: pointer; border-radius: 4px; padding: 2px 5px; font-size: 11px;">✏️</button>
+                                    <button type="button" class="cal-event-del-btn" title="Delete Event" onclick="window.MailApp.calendar.deleteEvent(${ev.id});">&times;</button>
+                                </div>
                             </div>
                         `;
                     });
@@ -1986,12 +2047,77 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 listEl.innerHTML = html;
             },
 
+            editEvent(id) {
+                let ev = (this.eventsCache || []).find(e => e.id == id);
+                if (ev) {
+                    this.populateEditForm(ev);
+                } else {
+                    fetch(`/api/calendar/upcoming?limit=100`)
+                        .then(r => r.json())
+                        .then(d => {
+                            const found = (d.events || []).find(e => e.id == id);
+                            if (found) this.populateEditForm(found);
+                        })
+                        .catch(err => console.error(err));
+                }
+            },
+
+            populateEditForm(ev) {
+                const card = document.getElementById('calCreateCard');
+                if (!card) return;
+
+                card.style.display = 'block';
+                card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                const formTitle = document.getElementById('calCreateFormTitle');
+                if (formTitle) formTitle.textContent = '✏️ Edit Scheduled Event';
+
+                const btnSave = document.getElementById('calSaveEventBtn');
+                if (btnSave) btnSave.textContent = 'Update Event';
+
+                const editIdInput = document.getElementById('calEventEditId');
+                if (editIdInput) editIdInput.value = ev.id;
+
+                const msgIdInput = document.getElementById('calEventMessageId');
+                if (msgIdInput) msgIdInput.value = ev.message_id || '';
+
+                const titleInput = document.getElementById('calEventTitle');
+                if (titleInput) titleInput.value = ev.title || '';
+
+                const dateInput = document.getElementById('calEventDate');
+                if (dateInput) dateInput.value = ev.event_date || '';
+
+                const catInput = document.getElementById('calEventCategory');
+                if (catInput) catInput.value = ev.category || 'interview';
+
+                const startInput = document.getElementById('calEventStartTime');
+                if (startInput) startInput.value = ev.start_time ? ev.start_time.substring(0, 5) : '10:00';
+
+                const endInput = document.getElementById('calEventEndTime');
+                if (endInput) endInput.value = ev.end_time ? ev.end_time.substring(0, 5) : '11:00';
+
+                const locInput = document.getElementById('calEventLocation');
+                if (locInput) locInput.value = ev.location || '';
+
+                const descInput = document.getElementById('calEventDesc');
+                if (descInput) descInput.value = ev.description || '';
+            },
+
             showCreateForm(prefill = null) {
                 const card = document.getElementById('calCreateCard');
                 if (!card) return;
 
                 card.style.display = 'block';
                 card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                const formTitle = document.getElementById('calCreateFormTitle');
+                if (formTitle) formTitle.textContent = 'Schedule New Event';
+
+                const btnSave = document.getElementById('calSaveEventBtn');
+                if (btnSave) btnSave.textContent = 'Save Event';
+
+                const editIdInput = document.getElementById('calEventEditId');
+                if (editIdInput) editIdInput.value = '';
 
                 if (prefill) {
                     const titleInput = document.getElementById('calEventTitle');
@@ -2019,6 +2145,8 @@ window.togglePasswordVisibility = function(targetId, btn) {
             hideCreateForm() {
                 const card = document.getElementById('calCreateCard');
                 if (card) card.style.display = 'none';
+                const editIdInput = document.getElementById('calEventEditId');
+                if (editIdInput) editIdInput.value = '';
             },
 
             async submitEvent() {
@@ -2030,50 +2158,58 @@ window.togglePasswordVisibility = function(targetId, btn) {
                 const location = document.getElementById('calEventLocation')?.value.trim() || null;
                 const description = document.getElementById('calEventDesc')?.value.trim() || null;
                 const message_id = document.getElementById('calEventMessageId')?.value || null;
+                const editId = document.getElementById('calEventEditId')?.value || null;
 
                 if (!title || !event_date) return;
 
                 const btnSave = document.getElementById('calSaveEventBtn');
+                const isUpdate = !!editId;
                 if (btnSave) {
                     btnSave.disabled = true;
-                    btnSave.textContent = 'Scheduling...';
+                    btnSave.textContent = isUpdate ? 'Updating...' : 'Scheduling...';
                 }
 
                 try {
-                    const res = await fetch('/api/calendar/events', {
+                    const endpoint = isUpdate ? '/api/calendar/events/update' : '/api/calendar/events';
+                    const payload = {
+                        title,
+                        event_date,
+                        category,
+                        start_time,
+                        end_time,
+                        location,
+                        description,
+                        message_id,
+                        _csrf_token: window.MailApp.csrfToken
+                    };
+                    if (isUpdate) {
+                        payload.id = parseInt(editId, 10);
+                    }
+
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': window.MailApp.csrfToken
                         },
-                        body: JSON.stringify({
-                            title,
-                            event_date,
-                            category,
-                            start_time,
-                            end_time,
-                            location,
-                            description,
-                            message_id,
-                            _csrf_token: window.MailApp.csrfToken
-                        })
+                        body: JSON.stringify(payload)
                     });
 
                     const data = await res.json();
                     if (data.success) {
-                        window.MailApp.showToast('📅 Scheduled successfully on Calendar!');
+                        window.MailApp.showToast(isUpdate ? '✏️ Event updated successfully!' : '📅 Scheduled successfully on Calendar!');
                         this.hideCreateForm();
                         this.selectedDate = event_date;
                         await this.loadMonthEvents();
                     } else {
-                        alert(data.message || 'Error creating event');
+                        alert(data.message || 'Error processing event');
                     }
                 } catch (e) {
-                    alert('Network error while scheduling event');
+                    alert('Network error while processing event');
                 } finally {
                     if (btnSave) {
                         btnSave.disabled = false;
-                        btnSave.textContent = 'Save Event';
+                        btnSave.textContent = isUpdate ? 'Update Event' : 'Save Event';
                     }
                 }
             },

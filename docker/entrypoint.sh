@@ -21,7 +21,9 @@ fi
 
 if [ "$IS_LOCAL" = "true" ] && [ -z "$DATABASE_URL" ]; then
     echo "=> [2/4] No external DB_HOST provided. Starting internal MariaDB database engine..."
-    service mariadb start || /etc/init.d/mariadb start || true
+    mkdir -p /var/run/mysqld /var/lib/mysql
+    chown -R mysql:mysql /var/run/mysqld /var/lib/mysql 2>/dev/null || true
+    service mariadb start || /etc/init.d/mariadb start || mysqld_safe &
     sleep 3
 
     # Configure root access and create database
