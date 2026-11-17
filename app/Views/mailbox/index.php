@@ -12,6 +12,12 @@
                 </svg>
             </button>
 
+            <button type="button" class="btn-icon" id="btnMarkAllFolderRead" onclick="window.MailApp.markAllInFolderRead()" title="Mark all messages in this view as read" aria-label="Mark all as read">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.66 16.17 7.41 11.93l-1.41 1.41 5.66 5.66 12-12-1.42-1.41zM.41 13.41L6.07 19.07l1.41-1.41L1.83 12 .41 13.41z"/>
+                </svg>
+            </button>
+
             <!-- Bulk action buttons (hidden until at least 1 message is selected) -->
             <div class="bulk-actions-group" id="bulkActionsGroup" style="display: none;">
                 <button type="button" class="btn-icon" id="bulkArchiveBtn" title="Archive" aria-label="Archive">

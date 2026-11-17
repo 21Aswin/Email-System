@@ -8,7 +8,7 @@ public/uploads/avatars/avatar_*
 
 # Playwright & test artifacts
 .playwright-mcp/
-tests/scratch/
+tests/
 *.log
 
 # OS generated files

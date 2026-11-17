@@ -76,6 +76,27 @@ class Message
             }
         }
 
+        // Primary unread vs All unread for Inbox badge
+        try {
+            $settingsStmt = $pdo->prepare("SELECT show_category_tabs, unread_badge_mode FROM user_settings WHERE user_id = :uid LIMIT 1");
+            $settingsStmt->execute(['uid' => $userId]);
+            $uSettings = $settingsStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $showTabs = !isset($uSettings['show_category_tabs']) || !empty($uSettings['show_category_tabs']);
+
+            if ($showTabs) {
+                // When category tabs are active, the main Inbox sidebar badge displays Primary unread emails
+                $primStmt = $pdo->prepare("
+                    SELECT SUM(CASE WHEN is_read = 0 THEN 1 ELSE 0 END)
+                    FROM mailbox_items
+                    WHERE user_id = :user_id AND folder = 'inbox' AND category = 'primary'
+                ");
+                $primStmt->execute(['user_id' => $userId]);
+                $counts['inbox']['unread'] = (int)($primStmt->fetchColumn() ?: 0);
+            }
+        } catch (\Exception $e) {
+            // Fallback to grouped count
+        }
+
         // Starred count across active folders
         $starredStmt = $pdo->prepare("
             SELECT COUNT(*) FROM mailbox_items 

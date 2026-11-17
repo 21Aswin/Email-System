@@ -107,7 +107,7 @@ INSERT INTO `message_recipients` (`message_id`, `recipient_type`, `email`, `disp
 INSERT INTO `mailbox_items` (`user_id`, `message_id`, `folder`, `category`, `is_read`, `is_starred`, `is_important`, `created_at`) VALUES
 (1, 1, 'inbox', 'primary', 0, 0, 1, NOW() - INTERVAL 10 MINUTE),
 (1, 2, 'inbox', 'primary', 1, 1, 1, NOW() - INTERVAL 2 HOUR),
-(1, 3, 'inbox', 'updates', 0, 0, 0, NOW() - INTERVAL 5 HOUR),
+(1, 3, 'inbox', 'updates', 1, 0, 0, NOW() - INTERVAL 5 HOUR),
 (1, 4, 'inbox', 'promotions', 1, 0, 0, NOW() - INTERVAL 1 DAY),
 (1, 5, 'sent', 'primary', 1, 0, 0, NOW() - INTERVAL 3 DAY),
 (1, 6, 'drafts', 'primary', 1, 0, 0, NOW() - INTERVAL 30 MINUTE),

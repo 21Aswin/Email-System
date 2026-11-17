@@ -78,6 +78,25 @@ class MessageController
         Response::success('Messages marked as ' . ($isRead ? 'read' : 'unread'));
     }
 
+    public function apiMarkAllRead(): void
+    {
+        $userId = (int)AuthService::id();
+        $data = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $folder = strtolower($data['folder'] ?? 'inbox');
+        $category = strtolower($data['category'] ?? '');
+
+        $pdo = \App\Core\Database::getConnection();
+        if ($folder === 'inbox' && !empty($category)) {
+            $stmt = $pdo->prepare("UPDATE mailbox_items SET is_read = 1 WHERE user_id = :uid AND folder = 'inbox' AND category = :cat AND is_read = 0");
+            $stmt->execute(['uid' => $userId, 'cat' => $category]);
+        } else {
+            $stmt = $pdo->prepare("UPDATE mailbox_items SET is_read = 1 WHERE user_id = :uid AND folder = :folder AND is_read = 0");
+            $stmt->execute(['uid' => $userId, 'folder' => $folder]);
+        }
+
+        Response::success('All messages marked as read');
+    }
+
     public function apiMoveFolder(): void
     {
         $userId = (int)AuthService::id();

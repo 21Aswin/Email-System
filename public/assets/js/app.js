@@ -693,6 +693,7 @@ window.togglePasswordVisibility = function(targetId, btn) {
             if (this.currentFolder === 'inbox' && !this.currentLabelId) {
                 document.getElementById('categoryTabs').style.display = 'flex';
             }
+            this.updateLiveFolderCounts();
         },
 
         replyToCurrent(isForward = false) {
@@ -997,11 +998,43 @@ window.togglePasswordVisibility = function(targetId, btn) {
         setBadge(elementId, count) {
             const el = document.getElementById(elementId);
             if (!el) return;
-            if (count > 0) {
-                el.textContent = count;
+            const num = parseInt(count || 0, 10);
+            if (num > 0) {
+                el.textContent = num;
                 el.style.display = 'inline-block';
             } else {
+                el.textContent = '0';
                 el.style.display = 'none';
+            }
+        },
+
+        async markAllInFolderRead() {
+            try {
+                const res = await fetch('/api/messages/mark-all-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
+                    body: JSON.stringify({
+                        folder: this.currentFolder,
+                        category: this.currentFolder === 'inbox' ? this.currentCategory : '',
+                        _csrf_token: this.csrfToken
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast('All messages marked as read');
+                    document.querySelectorAll('.message-row.unread').forEach(r => {
+                        r.classList.remove('unread');
+                        r.classList.add('read');
+                    });
+                    const inboxBadge = document.getElementById('badge-inbox');
+                    if (inboxBadge) {
+                        inboxBadge.textContent = '0';
+                        inboxBadge.style.display = 'none';
+                    }
+                    await this.updateLiveFolderCounts();
+                }
+            } catch (err) {
+                console.error("Mark all read failed:", err);
             }
         },
 

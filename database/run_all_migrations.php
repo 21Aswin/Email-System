@@ -363,6 +363,9 @@ try {
         $pdo->exec("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL AFTER display_name");
     }
 
+    // Ensure secondary category demo emails are marked read so Inbox badge reflects Primary unread
+    $pdo->exec("UPDATE mailbox_items SET is_read = 1 WHERE is_read = 0 AND category != 'primary'");
+
     // 6. Seed demo data if database is fresh
     echo "[6/6] Checking seed accounts...\n";
     $userCount = (int)$pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();

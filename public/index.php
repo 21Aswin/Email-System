@@ -86,6 +86,7 @@ $router->post('/api/messages/snooze', [\App\Controllers\MessageController::class
 $router->post('/api/messages/unsnooze', [\App\Controllers\MessageController::class, 'apiUnsnooze'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/category', [\App\Controllers\MessageController::class, 'apiSetCategory'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/mark-read', [\App\Controllers\MessageController::class, 'apiMarkRead'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/messages/mark-all-read', [\App\Controllers\MessageController::class, 'apiMarkAllRead'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/move', [\App\Controllers\MessageController::class, 'apiMoveFolder'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/empty-folder', [\App\Controllers\MessageController::class, 'apiEmptyFolder'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/permanent-delete', [\App\Controllers\MessageController::class, 'apiDeletePermanently'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
