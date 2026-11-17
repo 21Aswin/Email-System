@@ -22,11 +22,11 @@ class Database
                 $user = $parsed['user'] ?? 'root';
                 $pass = $parsed['pass'] ?? '';
             } else {
-                $host = Env::get('DB_HOST', 'localhost');
+                $host = Env::get('DB_HOST', '127.0.0.1');
                 $port = Env::get('DB_PORT', '3306');
                 $dbName = Env::get('DB_DATABASE', 'nkinfyx_email');
                 $user = Env::get('DB_USERNAME', 'root');
-                $pass = Env::get('DB_PASSWORD', '');
+                $pass = Env::get('DB_PASSWORD', 'Aswin@21');
             }
 
             $dsn = "mysql:host={$host};port={$port};dbname={$dbName};charset=utf8mb4";
@@ -63,10 +63,10 @@ class Database
             $user = $parsed['user'] ?? 'root';
             $pass = $parsed['pass'] ?? '';
         } else {
-            $host = Env::get('DB_HOST', 'localhost');
+            $host = Env::get('DB_HOST', '127.0.0.1');
             $port = Env::get('DB_PORT', '3306');
             $user = Env::get('DB_USERNAME', 'root');
-            $pass = Env::get('DB_PASSWORD', '');
+            $pass = Env::get('DB_PASSWORD', 'Aswin@21');
         }
 
         $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
