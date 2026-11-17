@@ -209,7 +209,15 @@ window.togglePasswordVisibility = function(targetId, btn) {
             // Bulk action buttons
             document.getElementById('bulkArchiveBtn')?.addEventListener('click', () => this.bulkMove('archive'));
             document.getElementById('bulkSpamBtn')?.addEventListener('click', () => this.bulkMove('spam'));
-            document.getElementById('bulkDeleteBtn')?.addEventListener('click', () => this.bulkMove('trash'));
+            document.getElementById('bulkDeleteBtn')?.addEventListener('click', () => {
+                if (this.currentFolder === 'drafts') {
+                    this.bulkDeleteDrafts();
+                } else if (this.currentFolder === 'trash') {
+                    this.bulkDeletePermanently();
+                } else {
+                    this.bulkMove('trash');
+                }
+            });
             document.getElementById('bulkMarkReadBtn')?.addEventListener('click', () => this.bulkMarkRead(true));
             document.getElementById('bulkMarkUnreadBtn')?.addEventListener('click', () => this.bulkMarkRead(false));
             document.getElementById('bulkSnoozeBtn')?.addEventListener('click', () => this.openBulkSnooze());
@@ -463,7 +471,11 @@ window.togglePasswordVisibility = function(targetId, btn) {
             }
         },
 
-        discardCurrentDraft() {
+        async discardCurrentDraft() {
+            if (this.draftTimeout) {
+                clearTimeout(this.draftTimeout);
+                this.draftTimeout = null;
+            }
             const userSettings = window.CURRENT_USER_SETTINGS || {};
             const confirmDiscard = (userSettings.confirm_discard !== undefined) ? !!userSettings.confirm_discard : true;
 
@@ -479,13 +491,18 @@ window.togglePasswordVisibility = function(targetId, btn) {
 
             const draftId = document.getElementById('composeDraftId').value;
             if (draftId) {
-                this.bulkMove('trash', [draftId]);
+                await this.deleteDraft(draftId, false);
             }
+            document.getElementById('composeDraftId').value = '';
             document.getElementById('composeModal').style.display = 'none';
             document.getElementById('composeForm').reset();
             document.getElementById('composeBodyEditor').innerHTML = '';
             this.selectedAttachmentIds = [];
             this.showToast('Draft discarded');
+            if (this.currentFolder === 'drafts') {
+                this.fetchMessages();
+            }
+            await this.updateLiveFolderCounts();
         },
 
         async handleFileUpload(files) {
@@ -771,7 +788,76 @@ window.togglePasswordVisibility = function(targetId, btn) {
         },
 
         async deleteSingle(messageId) {
-            await this.bulkMove('trash', [messageId]);
+            if (this.currentFolder === 'drafts') {
+                await this.deleteDraft(messageId);
+            } else if (this.currentFolder === 'trash') {
+                await this.deletePermanentlySingle(messageId);
+            } else {
+                await this.bulkMove('trash', [messageId]);
+            }
+        },
+
+        async deleteDraft(draftId, showFeedback = true) {
+            const ids = Array.isArray(draftId) ? draftId : [draftId];
+            if (!ids.length) return;
+            try {
+                const res = await fetch('/api/messages/draft/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
+                    body: JSON.stringify({ draft_ids: ids, _csrf_token: this.csrfToken })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (showFeedback) {
+                        this.showToast('Draft deleted.');
+                    }
+                    this.fetchMessages();
+                    await this.updateLiveFolderCounts();
+                } else {
+                    this.showToast(data.message || 'Failed to delete draft', 'error');
+                }
+            } catch (err) {
+                console.error("Delete draft error:", err);
+            }
+        },
+
+        async bulkDeleteDrafts() {
+            const ids = this.getSelectedMessageIds();
+            if (!ids.length) return;
+            if (confirm(`Delete ${ids.length} selected draft(s)?`)) {
+                await this.deleteDraft(ids);
+            }
+        },
+
+        async deletePermanentlySingle(messageId) {
+            if (confirm('Permanently delete this message? This cannot be undone.')) {
+                await this.bulkDeletePermanently([messageId]);
+            }
+        },
+
+        async bulkDeletePermanently(explicitIds = null) {
+            const ids = explicitIds || this.getSelectedMessageIds();
+            if (!ids.length) return;
+            if (!explicitIds && !confirm(`Permanently delete ${ids.length} selected message(s)? This cannot be undone.`)) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/messages/delete-permanently', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
+                    body: JSON.stringify({ message_ids: ids, _csrf_token: this.csrfToken })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.showToast(`Deleted ${ids.length} message(s) permanently`);
+                    this.fetchMessages();
+                    await this.updateLiveFolderCounts();
+                } else {
+                    this.showToast(data.message || 'Failed to delete permanently', 'error');
+                }
+            } catch (err) {
+                console.error("Permanent delete error:", err);
+            }
         },
 
         async bulkMove(targetFolder, explicitIds = null) {

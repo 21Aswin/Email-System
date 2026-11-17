@@ -248,4 +248,23 @@ class MessageController
         Message::toggleLabel($userId, $messageId, $labelId, $apply);
         Response::success('Label updated successfully.');
     }
+
+    public function apiDeleteDraft(): void
+    {
+        $userId = (int)AuthService::id();
+        $data = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $draftIds = array_map('intval', (array)($data['draft_ids'] ?? $data['message_ids'] ?? []));
+
+        if (empty($draftIds)) {
+            Response::error('No draft selected.', 400);
+            return;
+        }
+
+        try {
+            Message::deleteDraft($userId, $draftIds);
+            Response::success('Draft deleted successfully.');
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 500);
+        }
+    }
 }

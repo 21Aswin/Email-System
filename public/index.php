@@ -90,6 +90,8 @@ $router->post('/api/messages/mark-all-read', [\App\Controllers\MessageController
 $router->post('/api/messages/move', [\App\Controllers\MessageController::class, 'apiMoveFolder'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/empty-folder', [\App\Controllers\MessageController::class, 'apiEmptyFolder'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 $router->post('/api/messages/permanent-delete', [\App\Controllers\MessageController::class, 'apiDeletePermanently'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/messages/delete-permanently', [\App\Controllers\MessageController::class, 'apiDeletePermanently'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
+$router->post('/api/messages/draft/delete', [\App\Controllers\MessageController::class, 'apiDeleteDraft'], [\App\Middleware\AuthMiddleware::class, \App\Middleware\CsrfMiddleware::class]);
 
 // Labels API
 $router->get('/api/labels', [\App\Controllers\LabelController::class, 'apiGetLabels'], [\App\Middleware\AuthMiddleware::class]);

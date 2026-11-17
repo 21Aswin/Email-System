@@ -554,6 +554,46 @@ class Message
             throw $e;
         }
     }
+    /**
+     * Permanently delete / discard a draft
+     */
+    public static function deleteDraft(int $userId, int|array $draftIds): void
+    {
+        $draftIds = array_map('intval', (array)$draftIds);
+        if (empty($draftIds)) return;
+        $pdo = Database::getConnection();
+        $placeholders = implode(',', array_fill(0, count($draftIds), '?'));
+
+        $pdo->beginTransaction();
+        try {
+            // Delete from mailbox_items where folder = 'drafts'
+            $stmt = $pdo->prepare("
+                DELETE FROM mailbox_items 
+                WHERE user_id = ? AND folder = 'drafts' AND message_id IN ({$placeholders})
+            ");
+            $stmt->execute(array_merge([$userId], $draftIds));
+
+            // Delete associated draft attachments
+            $stmtAtt = $pdo->prepare("
+                DELETE FROM attachments 
+                WHERE message_id IN ({$placeholders})
+            ");
+            $stmtAtt->execute($draftIds);
+
+            // Delete draft messages owned by this user
+            $stmtMsg = $pdo->prepare("
+                DELETE FROM messages 
+                WHERE owner_user_id = ? AND id IN ({$placeholders})
+            ");
+            $stmtMsg->execute(array_merge([$userId], $draftIds));
+
+            $pdo->commit();
+        } catch (\Exception $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public static function deletePermanently(int $userId, array $messageIds): void
     {
         if (empty($messageIds)) return;
@@ -562,10 +602,10 @@ class Message
         
         $pdo->beginTransaction();
         try {
-            // Delete mailbox item
+            // Delete mailbox item from trash or drafts
             $stmt = $pdo->prepare("
                 DELETE FROM mailbox_items 
-                WHERE user_id = ? AND folder = 'trash' AND message_id IN ({$placeholders})
+                WHERE user_id = ? AND folder IN ('trash', 'drafts') AND message_id IN ({$placeholders})
             ");
             $stmt->execute(array_merge([$userId], $messageIds));
 
