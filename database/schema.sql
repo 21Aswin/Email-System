@@ -115,3 +115,60 @@ CREATE TABLE `message_labels` (
     UNIQUE KEY `uniq_message_label` (`message_id`, `label_id`),
     INDEX `idx_msg_labels_label` (`label_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- User Settings Table
+CREATE TABLE IF NOT EXISTS `user_settings` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED NOT NULL UNIQUE,
+    `theme` VARCHAR(20) NOT NULL DEFAULT 'system',
+    `density` VARCHAR(20) NOT NULL DEFAULT 'comfortable',
+    `emails_per_page` INT NOT NULL DEFAULT 30,
+    `signature` TEXT NULL,
+    `show_category_tabs` TINYINT(1) NOT NULL DEFAULT 1,
+    `auto_advance` VARCHAR(20) NOT NULL DEFAULT 'next',
+    `keyboard_shortcuts` TINYINT(1) NOT NULL DEFAULT 1,
+    `confirm_discard` TINYINT(1) NOT NULL DEFAULT 1,
+    `vacation_responder_enabled` TINYINT(1) NOT NULL DEFAULT 0,
+    `vacation_responder_subject` VARCHAR(191) NULL,
+    `vacation_responder_body` TEXT NULL,
+    `vacation_responder_start` DATE NULL,
+    `vacation_responder_end` DATE NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Blocked Senders Table
+CREATE TABLE IF NOT EXISTS `blocked_senders` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED NOT NULL,
+    `email` VARCHAR(191) NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_user_blocked` (`user_id`, `email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Calendar Events Table
+CREATE TABLE IF NOT EXISTS `calendar_events` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT UNSIGNED NOT NULL,
+    `title` VARCHAR(191) NOT NULL,
+    `description` TEXT NULL,
+    `start_datetime` DATETIME NOT NULL,
+    `end_datetime` DATETIME NOT NULL,
+    `is_all_day` TINYINT(1) NOT NULL DEFAULT 0,
+    `color` VARCHAR(20) NOT NULL DEFAULT '#1a73e8',
+    `location` VARCHAR(191) NULL,
+    `recurrence` VARCHAR(20) NOT NULL DEFAULT 'none',
+    `source_message_id` INT UNSIGNED NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    INDEX `idx_events_user_start` (`user_id`, `start_datetime`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Default Settings for Seed Users
+INSERT IGNORE INTO `user_settings` (`user_id`, `theme`, `density`, `emails_per_page`, `show_category_tabs`, `keyboard_shortcuts`, `confirm_discard`)
+VALUES (1, 'system', 'comfortable', 30, 1, 1, 1),
+       (2, 'system', 'comfortable', 30, 1, 1, 1);
+
