@@ -1,0 +1,24 @@
+# Antigravity AI Security & Privacy Ignore Rules
+# Files listed here must NEVER be read, inspected, or displayed by AI agents.
+
+# Environment and secret credentials
+.env
+.env.*
+.env.local
+.env.production
+!.env.example
+
+# Private Keys & Certificates
+*.key
+*.pem
+*.crt
+*.pfx
+*.p12
+id_rsa*
+id_ed25519*
+
+# Authentication & Cloud Credentials
+credentials.json
+token.json
+secrets/
+storage/credentials/
