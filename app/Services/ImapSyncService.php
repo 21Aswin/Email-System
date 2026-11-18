@@ -96,8 +96,8 @@ class ImapSyncService
             return ['synced' => 0, 'message' => 'No messages found in remote mailbox.'];
         }
 
-        // Check the most recent 10 messages (e.g. from total - 9 to total)
-        $startSeq = max(1, $totalMessages - 9);
+        // Check the most recent 20 messages
+        $startSeq = max(1, $totalMessages - 19);
         $fetchRange = "{$startSeq}:{$totalMessages}";
 
         // Fetch headers and peek body for the range
@@ -175,10 +175,7 @@ class ImapSyncService
                 continue;
             }
 
-            // Don't sync messages sent by our own SMTP account into the Inbox
-            if (strtolower($senderEmail) === strtolower($this->username)) {
-                continue;
-            }
+
 
             // Extract Body text from chunk
             $rawBody = '';
