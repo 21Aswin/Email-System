@@ -84,14 +84,17 @@ CREATE TABLE `mailbox_items` (
 -- Attachments
 CREATE TABLE `attachments` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `message_id` INT UNSIGNED NOT NULL,
+    `user_id` INT UNSIGNED NULL DEFAULT NULL,
+    `message_id` INT UNSIGNED NULL DEFAULT NULL,
     `original_name` VARCHAR(255) NOT NULL,
     `storage_name` VARCHAR(255) NOT NULL,
     `mime_type` VARCHAR(120) NOT NULL DEFAULT 'application/octet-stream',
     `size_bytes` BIGINT UNSIGNED NOT NULL DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
     FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE CASCADE,
-    INDEX `idx_attachments_message` (`message_id`)
+    INDEX `idx_attachments_message` (`message_id`),
+    INDEX `idx_attachments_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Custom Labels

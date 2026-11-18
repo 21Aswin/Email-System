@@ -19,8 +19,10 @@ class ImapSyncService
 
     public function __construct()
     {
-        $this->host = 'imap.gmail.com';
-        $this->port = 993;
+        $smtpHost = (string)Env::get('SMTP_HOST', 'smtp.gmail.com');
+        $defaultImap = str_contains($smtpHost, 'hostinger.com') ? 'imap.hostinger.com' : 'imap.gmail.com';
+        $this->host = (string)Env::get('IMAP_HOST', $defaultImap);
+        $this->port = (int)Env::get('IMAP_PORT', 993);
         $this->username = trim((string)Env::get('SMTP_USERNAME', ''));
         $this->password = str_replace(' ', '', trim((string)Env::get('SMTP_PASSWORD', '')));
     }
