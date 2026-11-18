@@ -82,7 +82,20 @@ class SmtpTransport
         // AUTH LOGIN
         $this->sendCommand($socket, "AUTH LOGIN", 334);
         $this->sendCommand($socket, base64_encode($this->username), 334);
-        $this->sendCommand($socket, base64_encode($this->password), 235);
+        try {
+            $this->sendCommand($socket, base64_encode($this->password), 235);
+        } catch (Exception $e) {
+            if (strpos($e->getMessage(), '535') !== false) {
+                if (stripos($this->host, 'gmail') !== false) {
+                    throw new Exception("SMTP Authentication Failed (535 5.7.8): Gmail requires a 16-character App Password (not your normal Gmail account password). Make sure 2-Step Verification is enabled in your Google Account and generate an App Password from https://myaccount.google.com/apppasswords. Also ensure SMTP_USERNAME matches your exact Gmail address.");
+                } else if (stripos($this->host, 'hostinger') !== false) {
+                    throw new Exception("SMTP Authentication Failed (535 5.7.8): For Hostinger, SMTP_USERNAME must be your full email address (e.g. admin@nkinfyx.in) created in Hostinger hPanel -> Emails, and the password must match that email's password.");
+                } else {
+                    throw new Exception("SMTP Authentication Failed (535 5.7.8): Invalid username or password on {$this->host}. Please check your SMTP credentials.");
+                }
+            }
+            throw $e;
+        }
 
         // MAIL FROM
         $this->sendCommand($socket, "MAIL FROM: <{$fromEmail}>", 250);

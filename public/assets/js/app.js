@@ -629,9 +629,9 @@ window.togglePasswordVisibility = function(targetId, btn) {
 
                 container.innerHTML = `
                     <div class="email-reading-header">
-                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
-                            <h2 class="reading-subject" style="margin-bottom: 0;">${this.escapeHtml(msg.subject || '(no subject)')}</h2>
-                            <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; max-width: 100%;">
+                            <h2 class="reading-subject" style="margin-bottom: 0; min-width: 0; flex: 1; word-break: break-word; overflow-wrap: anywhere;">${this.escapeHtml(msg.subject || '(no subject)')}</h2>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                 <button type="button" class="btn-star ${msg.is_starred ? 'starred' : ''}" onclick="window.MailApp.toggleStar(${msg.message_id || msg.id}, this);" title="Star message">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="${msg.is_starred ? '#f4b400' : 'none'}" stroke="${msg.is_starred ? '#f4b400' : 'currentColor'}" stroke-width="2">
                                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -644,16 +644,16 @@ window.togglePasswordVisibility = function(targetId, btn) {
                                 </button>
                             </div>
                         </div>
-                        <div class="reading-sender-row" style="margin-top: 14px;">
-                            <div class="sender-identity" data-name="${this.escapeHtml(msg.sender_name || msg.sender_email)}" data-email="${this.escapeHtml(msg.sender_email)}" style="cursor: pointer;">
+                        <div class="reading-sender-row" style="margin-top: 14px; min-width: 0; max-width: 100%;">
+                            <div class="sender-identity" data-name="${this.escapeHtml(msg.sender_name || msg.sender_email)}" data-email="${this.escapeHtml(msg.sender_email)}" style="cursor: pointer; min-width: 0; flex: 1;">
                                 <div class="sender-avatar">${senderInitial}</div>
-                                <div class="sender-meta">
-                                    <span class="sender-name-full">${this.escapeHtml(msg.sender_name || msg.sender_email)}</span>
-                                    <span class="sender-email-sub">&lt;${this.escapeHtml(msg.sender_email)}&gt;</span>
-                                    <span class="sender-email-sub">To: ${msg.recipients.map(r => this.escapeHtml(r.email)).join(', ')}</span>
+                                <div class="sender-meta" style="min-width: 0; flex: 1; word-break: break-word; overflow-wrap: anywhere;">
+                                    <span class="sender-name-full" style="word-break: break-word; overflow-wrap: anywhere;">${this.escapeHtml(msg.sender_name || msg.sender_email)}</span>
+                                    <span class="sender-email-sub" style="word-break: break-word; overflow-wrap: anywhere;">&lt;${this.escapeHtml(msg.sender_email)}&gt;</span>
+                                    <span class="sender-email-sub" style="word-break: break-word; overflow-wrap: anywhere;">To: ${msg.recipients.map(r => this.escapeHtml(r.email)).join(', ')}</span>
                                 </div>
                             </div>
-                            <div class="reading-date-full">
+                            <div class="reading-date-full" style="flex-shrink: 0;">
                                 ${new Date(msg.message_date).toLocaleString()}
                             </div>
                         </div>
@@ -662,7 +662,7 @@ window.togglePasswordVisibility = function(targetId, btn) {
                     ${interviewBannerHtml}
 
                     <div class="email-reading-body">
-                        ${msg.body_html || `<p>${this.escapeHtml(msg.body_text || '')}</p>`}
+                        ${msg.body_html || `<div class="email-plain-body">${this.escapeHtml(msg.body_text || '').replace(/\r\n/g, '<br>').replace(/\n/g, '<br>')}</div>`}
                     </div>
 
                     ${attachmentsHtml}
