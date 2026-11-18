@@ -117,58 +117,66 @@ CREATE TABLE `message_labels` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- User Settings Table
-CREATE TABLE IF NOT EXISTS `user_settings` (
+DROP TABLE IF EXISTS `user_settings`;
+CREATE TABLE `user_settings` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `user_id` INT UNSIGNED NOT NULL UNIQUE,
-    `theme` VARCHAR(20) NOT NULL DEFAULT 'system',
-    `density` VARCHAR(20) NOT NULL DEFAULT 'comfortable',
-    `emails_per_page` INT NOT NULL DEFAULT 30,
-    `signature` TEXT NULL,
+    `user_id` INT UNSIGNED NOT NULL,
+    `theme` ENUM('light', 'dark', 'system') NOT NULL DEFAULT 'light',
+    `density` ENUM('comfortable', 'compact') NOT NULL DEFAULT 'comfortable',
+    `default_folder` VARCHAR(40) NOT NULL DEFAULT 'inbox',
+    `default_category` VARCHAR(40) NOT NULL DEFAULT 'primary',
     `show_category_tabs` TINYINT(1) NOT NULL DEFAULT 1,
-    `auto_advance` VARCHAR(20) NOT NULL DEFAULT 'next',
-    `keyboard_shortcuts` TINYINT(1) NOT NULL DEFAULT 1,
+    `unread_badge_mode` ENUM('unread', 'total') NOT NULL DEFAULT 'unread',
+    `in_app_notifications` TINYINT(1) NOT NULL DEFAULT 1,
+    `browser_notifications` TINYINT(1) NOT NULL DEFAULT 0,
+    `signature` TEXT NULL,
+    `append_signature` TINYINT(1) NOT NULL DEFAULT 1,
+    `default_reply_behavior` ENUM('reply', 'reply_all') NOT NULL DEFAULT 'reply',
     `confirm_discard` TINYINT(1) NOT NULL DEFAULT 1,
-    `vacation_responder_enabled` TINYINT(1) NOT NULL DEFAULT 0,
-    `vacation_responder_subject` VARCHAR(191) NULL,
-    `vacation_responder_body` TEXT NULL,
-    `vacation_responder_start` DATE NULL,
-    `vacation_responder_end` DATE NULL,
+    `auto_save_drafts` TINYINT(1) NOT NULL DEFAULT 1,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+    FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_user_settings_uid` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Blocked Senders Table
-CREATE TABLE IF NOT EXISTS `blocked_senders` (
+DROP TABLE IF EXISTS `blocked_senders`;
+CREATE TABLE `blocked_senders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    UNIQUE KEY `uniq_user_blocked` (`user_id`, `email`)
+    UNIQUE KEY `uniq_user_blocked_email` (`user_id`, `email`),
+    INDEX `idx_blocked_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Calendar Events Table
-CREATE TABLE IF NOT EXISTS `calendar_events` (
+DROP TABLE IF EXISTS `calendar_events`;
+CREATE TABLE `calendar_events` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `user_id` INT UNSIGNED NOT NULL,
-    `title` VARCHAR(191) NOT NULL,
+    `message_id` INT UNSIGNED NULL DEFAULT NULL,
+    `title` VARCHAR(255) NOT NULL,
     `description` TEXT NULL,
-    `start_datetime` DATETIME NOT NULL,
-    `end_datetime` DATETIME NOT NULL,
+    `location` VARCHAR(255) NULL,
+    `event_date` DATE NOT NULL,
+    `start_time` TIME NULL,
+    `end_time` TIME NULL,
     `is_all_day` TINYINT(1) NOT NULL DEFAULT 0,
-    `color` VARCHAR(20) NOT NULL DEFAULT '#1a73e8',
-    `location` VARCHAR(191) NULL,
-    `recurrence` VARCHAR(20) NOT NULL DEFAULT 'none',
-    `source_message_id` INT UNSIGNED NULL,
+    `category` ENUM('interview', 'work', 'meeting', 'holiday', 'personal') NOT NULL DEFAULT 'interview',
+    `color` VARCHAR(30) NOT NULL DEFAULT '#10b981',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-    INDEX `idx_events_user_start` (`user_id`, `start_datetime`)
+    FOREIGN KEY (`message_id`) REFERENCES `messages` (`id`) ON DELETE SET NULL,
+    INDEX `idx_events_user_date` (`user_id`, `event_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Default Settings for Seed Users
-INSERT IGNORE INTO `user_settings` (`user_id`, `theme`, `density`, `emails_per_page`, `show_category_tabs`, `keyboard_shortcuts`, `confirm_discard`)
-VALUES (1, 'system', 'comfortable', 30, 1, 1, 1),
-       (2, 'system', 'comfortable', 30, 1, 1, 1);
+INSERT IGNORE INTO `user_settings` (`user_id`, `theme`, `density`, `default_folder`, `default_category`, `show_category_tabs`, `unread_badge_mode`, `in_app_notifications`, `browser_notifications`, `append_signature`, `default_reply_behavior`, `confirm_discard`, `auto_save_drafts`)
+VALUES (1, 'light', 'comfortable', 'inbox', 'primary', 1, 'unread', 1, 0, 1, 'reply', 1, 1),
+       (2, 'light', 'comfortable', 'inbox', 'primary', 1, 'unread', 1, 0, 1, 'reply', 1, 1);
+
 
