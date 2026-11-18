@@ -21,24 +21,25 @@ class ImapSyncService
     {
         $smtpHost = (string)Env::get('SMTP_HOST', 'smtp.gmail.com');
         $defaultImap = str_contains($smtpHost, 'hostinger.com') ? 'imap.hostinger.com' : 'imap.gmail.com';
-        $this->host = (string)Env::get('IMAP_HOST', $defaultImap);
+        $this->host = (string)(Env::get('IMAP_HOST') ?: $defaultImap);
         $this->port = (int)Env::get('IMAP_PORT', 993);
-        $this->username = trim((string)Env::get('SMTP_USERNAME', ''));
-        $this->password = str_replace(' ', '', trim((string)Env::get('SMTP_PASSWORD', '')));
+        $this->username = trim((string)(Env::get('IMAP_USERNAME') ?: Env::get('SMTP_USERNAME', '')));
+        $this->password = str_replace(' ', '', trim((string)(Env::get('IMAP_PASSWORD') ?: Env::get('SMTP_PASSWORD', ''))));
     }
 
     public function isConfigured(): bool
     {
-        $enabled = filter_var(Env::get('SMTP_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
         $imapEnabled = filter_var(Env::get('IMAP_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
-
-        // Outbound-only SMTP relays (Brevo, Sendinblue, Mailgun, SendGrid) do not have an IMAP inbox
-        $smtpHost = (string)Env::get('SMTP_HOST', '');
-        if (str_contains($smtpHost, 'brevo.com') || str_contains($smtpHost, 'sendinblue.com')) {
+        if (!$imapEnabled) {
             return false;
         }
 
-        return $enabled && $imapEnabled && !empty($this->username) && !empty($this->password);
+        // Outbound-only SMTP relays (Brevo, Sendinblue, Mailgun, SendGrid) do not have an IMAP inbox
+        if (str_contains($this->host, 'brevo.com') || str_contains($this->host, 'sendinblue.com')) {
+            return false;
+        }
+
+        return !empty($this->host) && !empty($this->username) && !empty($this->password);
     }
 
     /**
@@ -47,13 +48,6 @@ class ImapSyncService
     public function syncInbox(int $userId): array
     {
         if (!$this->isConfigured()) {
-            $smtpHost = (string)Env::get('SMTP_HOST', '');
-            if (str_contains($smtpHost, 'brevo.com') || str_contains($smtpHost, 'sendinblue.com')) {
-                return [
-                    'synced' => 0,
-                    'message' => 'Inbox refreshed. (Brevo delivers outbound mail; replies arrive directly in your personal email inbox).'
-                ];
-            }
             return [
                 'synced' => 0,
                 'message' => 'Inbox refreshed.'
@@ -80,6 +74,9 @@ class ImapSyncService
         $loginResp = $this->readTaggedResponse($socket, 'A1');
         if (!str_contains($loginResp, 'A1 OK')) {
             fclose($socket);
+            if (str_contains($loginResp, 'AUTHENTICATIONFAILED')) {
+                throw new Exception("Gmail IMAP Login failed. Verify your 16-character Google App Password in IMAP_PASSWORD, and ensure 'Enable IMAP' is turned ON in Gmail Settings -> Forwarding and POP/IMAP.");
+            }
             throw new Exception("IMAP Login failed: " . trim($loginResp));
         }
 
