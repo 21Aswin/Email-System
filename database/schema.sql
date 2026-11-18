@@ -15,6 +15,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE TABLE `users` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `display_name` VARCHAR(100) NOT NULL,
+    `avatar_path` VARCHAR(255) NULL,
     `email` VARCHAR(191) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `status` ENUM('active', 'suspended', 'pending') NOT NULL DEFAULT 'active',
