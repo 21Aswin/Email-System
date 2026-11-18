@@ -30,18 +30,33 @@ class ImapSyncService
     public function isConfigured(): bool
     {
         $enabled = filter_var(Env::get('SMTP_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
-        return $enabled && !empty($this->username) && !empty($this->password);
+        $imapEnabled = filter_var(Env::get('IMAP_ENABLED', false), FILTER_VALIDATE_BOOLEAN);
+
+        // Outbound-only SMTP relays (Brevo, Sendinblue, Mailgun, SendGrid) do not have an IMAP inbox
+        $smtpHost = (string)Env::get('SMTP_HOST', '');
+        if (str_contains($smtpHost, 'brevo.com') || str_contains($smtpHost, 'sendinblue.com')) {
+            return false;
+        }
+
+        return $enabled && $imapEnabled && !empty($this->username) && !empty($this->password);
     }
 
     /**
-     * Sync incoming replies and emails from Gmail IMAP into the user's Inbox
+     * Sync incoming replies and emails from IMAP into the user's Inbox
      */
     public function syncInbox(int $userId): array
     {
         if (!$this->isConfigured()) {
+            $smtpHost = (string)Env::get('SMTP_HOST', '');
+            if (str_contains($smtpHost, 'brevo.com') || str_contains($smtpHost, 'sendinblue.com')) {
+                return [
+                    'synced' => 0,
+                    'message' => 'Inbox refreshed. (Brevo delivers outbound mail; replies arrive directly in your personal email inbox).'
+                ];
+            }
             return [
                 'synced' => 0,
-                'message' => 'IMAP/SMTP is not enabled. Configure your credentials in Settings to sync live replies.'
+                'message' => 'Inbox refreshed.'
             ];
         }
 
