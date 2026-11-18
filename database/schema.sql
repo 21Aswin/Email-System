@@ -1,9 +1,6 @@
 -- nkinfyx groups Mail Database Schema
 -- UTF8mb4 & MySQL 8 / MariaDB compatible
 
-CREATE DATABASE IF NOT EXISTS `nkinfyx_email` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `nkinfyx_email`;
-
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS `message_labels`;
 DROP TABLE IF EXISTS `labels`;

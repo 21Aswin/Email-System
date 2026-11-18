@@ -1,8 +1,6 @@
 -- Seed data for nkinfyx groups Mail
 -- Passwords hashed using bcrypt: "password123" ($2y$10$wT33pBvh53Qx4u65eI2C9u3a8Yk4kK1gR1m5s0eJ/cWnC9/L45z2e)
 
-USE `nkinfyx_email`;
-
 -- 1. Create Default Users
 -- Default admin / demo user: adminnkinflyx@gmail.com
 -- Secondary test user: client@nkinfyxgroups.in
